@@ -437,4 +437,4 @@ jdk/jfr/jcmd/TestJcmdDumpPathToGCRoots.java https://github.com/adoptium/aqa-test
 jdk/jfr/event/runtime/TestShutdownEvent.java https://github.com/adoptium/aqa-tests/issues/2985 linux-aarch64
 
 # jdk_rsocket
-jdk/net/rsocket generic-all
+jdk/net/rsocket https://github.com/adoptium/aqa-tests/issues/2985 generic-all
