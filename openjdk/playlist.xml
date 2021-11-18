@@ -1759,6 +1759,7 @@
 		</command>
 		<versions>
 			<version>8</version>
+			<version>11</version>
 		</versions>
 		<levels>
 			<level>sanity</level>
@@ -1782,6 +1783,7 @@
 		</command>
 		<versions>
 			<version>8</version>
+			<version>11</version>
 		</versions>
 		<levels>
 			<level>sanity</level>
