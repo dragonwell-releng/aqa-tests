@@ -1841,7 +1841,7 @@
 	</test>
 	<test>
 		<testCaseName>dragonwell8_tenant_jdk</testCaseName>
-		<command>${TEST_JDK_HOME}bin/jgroup -u testuser -g testuser && \
+		<command>${TEST_JDK_HOME}bin/jgroup -u testuser -g testuser ; \
 			$(JAVA_COMMAND) -Xmx512m -jar $(Q)$(TEST_RESROOT)$(D)jtreg$(D)lib$(D)jtreg.jar$(Q) \
 			$(JTREG_BASIC_OPTIONS) -vmoptions:$(Q)-Xmx512m $(JVM_OPTIONS)$(Q) \
 			-w $(Q)$(REPORTDIR)$(D)work$(Q) \
@@ -1934,7 +1934,7 @@
 	</test>
 	<test>
 		<testCaseName>dragonwell8_tenant_hotspot</testCaseName>
-		<command>${TEST_JDK_HOME}bin/jgroup -u testuser -g testuser && \
+		<command>${TEST_JDK_HOME}bin/jgroup -u testuser -g testuser ; \
 			$(JAVA_COMMAND) -Xmx512m -jar $(Q)$(TEST_RESROOT)$(D)jtreg$(D)lib$(D)jtreg.jar$(Q) \
 			$(JTREG_BASIC_OPTIONS) -vmoptions:$(Q)-Xmx512m $(JVM_OPTIONS)$(Q) \
 			-w $(Q)$(REPORTDIR)$(D)work$(Q) \
