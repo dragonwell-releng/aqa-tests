@@ -438,3 +438,5 @@ jdk/jfr/event/runtime/TestShutdownEvent.java https://github.com/adoptium/aqa-tes
 
 # jdk_rsocket
 jdk/net/rsocket https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+runtime/coroutine/jniMonitorExitTest.sh https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+runtime/coroutine/jniDetachThreadHoldingMonitorTest.sh https://github.com/adoptium/aqa-tests/issues/2985 generic-all
