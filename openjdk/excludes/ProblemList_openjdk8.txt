@@ -196,7 +196,31 @@ java/math/BigInteger/LargeValueExceptions.java	https://github.com/adoptium/aqa-t
 # jdk_net
 
 java/net/Inet4Address/PingThis.java	https://github.com/adoptium/infrastructure/issues/1127	aix-all
-jdk/net/rsocket https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/Exceptions.java	 https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/SocketChannel/SocketOptionTests.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/SocketChannel/SCConfigureBlocking.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/SocketChannel/Stream.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/SocketChannel/Connect.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/SocketChannel/IOExchanges.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/SocketChannel/CloseDuringWrite.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/SocketChannel/FinishConnect.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/SocketChannel/BasicSocketChannelTest.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/RsocketTest.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/NullBind.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/Selector/SelectorTest.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/Selector/Connect.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/Selector/BasicConnect.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/Selector/BasicAccept.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/ServerSocketChannel/SSCConfigureBlocking.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/SocketOption/OptionsTest.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/Socket/GetLocalAddress.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/Socket/BasicSocketTest.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/Socket/BasicSocketTest.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/ServerSocketChannel/SocketOptionTests.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/SocketOption/UnsupportedOptionsTest.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/SocketChannel/VectorIO.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+jdk/net/rsocket/ServerSocketChannel/Basic.java https://github.com/adoptium/aqa-tests/issues/2985 generic-all
+
 java/net/InetAddress/BadDottedIPAddress.java	https://github.com/adoptium/aqa-tests/issues/827	linux-all
 java/net/Inet6Address/B6206527.java https://github.com/adoptium/infrastructure/issues/1085 macosx-all
 java/net/Inet6Address/B6558853.java	https://github.com/adoptium/aqa-tests/issues/827	macosx-all
