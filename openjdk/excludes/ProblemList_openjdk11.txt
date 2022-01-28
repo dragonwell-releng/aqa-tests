@@ -32,6 +32,7 @@ java/beans/XMLEncoder/java_awt_ScrollPane.java	https://github.com/adoptium/aqa-t
 # jdk_compiler
 
 compiler/gcbarriers/UnsafeIntrinsicsTest.java#shenandoah https://github.com/adoptium/aqa-tests/issues/2640 linux-aarch64
+compiler/aot/fingerprint/SelfChangedCDS.java https://github.com/adoptium/aqa-tests/issues/2640 windows-x86
 
 ############################################################################
 
