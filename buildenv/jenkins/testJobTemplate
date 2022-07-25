@@ -416,7 +416,7 @@ ARCH_OS_LIST.each { ARCH_OS ->
 							    sectionHeader('Parameters to determine what to do with post run artifacts.')
 							    sectionHeaderStyle(sectionHeaderHelpTextStyleCss)
 							}
-							booleanParam('KEEP_WORKSPACE', false, "Keep workspace on the machine")
+							booleanParam('KEEP_WORKSPACE', true, "Keep workspace on the machine")
 							stringParam('KEEP_REPORTDIR', KEEP_REPORTDIR, "Keep the test report dir if the test passes?")
 							booleanParam('ARCHIVE_TEST_RESULTS', ARCHIVE_TEST_RESULTS.toBoolean(), "archive the test report dir in Jenkins (or artifactory if artifactory parameters are provided)?")
 							stringParam('ARTIFACTORY_SERVER', ARTIFACTORY_SERVER, "Optional. Default is to upload test output (failed build) onto artifactory only. By unset this value, test output will be archived to Jenkins")
