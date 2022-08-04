@@ -30,7 +30,7 @@ supported_packages="jdk jre"
 supported_builds="full"
 
 # Supported tests
-supported_tests="external_custom camel derby elasticsearch jacoco jenkins functional-test kafka lucene-solr openliberty-mp-tck payara-mp-tck quarkus quarkus_quickstarts scala system-test tomcat tomee wildfly wycheproof netty spring"
+supported_tests="external_custom camel derby elasticsearch jacoco jenkins functional-test kafka lucene-solr openliberty-mp-tck payara-mp-tck quarkus quarkus_quickstarts scala system-test tomcat tomee wildfly wycheproof netty spring zookeeper"
 
 function check_version() {
     version=$1
@@ -209,6 +209,8 @@ function set_test_info() {
     sbt_version=$(getProperty "sbt_version")
     bazel_version=$(getProperty "bazel_version")
     openssl_version=$(getProperty "openssl_version")
+    python_version=$(getProperty "python_version")
+    criu_version=$(getProperty "criu_version")
     maven_version=$(getProperty "maven_version")
     environment_variable=$(getProperty "environment_variable")
     localPropertyFile=$(getProperty "localPropertyFile")

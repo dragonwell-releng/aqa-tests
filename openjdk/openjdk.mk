@@ -168,3 +168,19 @@ GRAAL_PROBLEM_LIST_FILE:=
 ifneq ($(filter 11 16, $(JDK_VERSION)),)
 	GRAAL_PROBLEM_LIST_FILE:=-exclude:$(Q)$(JTREG_HOTSPOT_TEST_DIR)$(D)ProblemList-graal.txt$(Q)
 endif
+
+FEATURE_PROBLEM_LIST_FILE:=
+ifeq ($(TEST_FLAG), FIPS)
+	FEATURE_PROBLEM_LIST_FILE:=-exclude:$(Q)$(JTREG_JDK_TEST_DIR)$(D)ProblemList-fips.txt$(Q)
+endif
+
+VENDOR_PROBLEM_LIST_FILE:=
+ifeq ($(JDK_VENDOR),$(filter $(JDK_VENDOR),redhat azul alibaba))
+	VENDOR_PROBLEM_LIST_FILE:=-exclude:$(Q)$(TEST_ROOT)$(D)openjdk$(D)excludes$(D)vendors$(D)$(JDK_VENDOR)$(D)ProblemList_openjdk$(JDK_VERSION).txt$(Q)
+endif
+
+# --add-modules jdk.incubator.foreign is removed for JDK19+
+ADD_MODULES=
+ifneq ($(filter 16 17 18, $(JDK_VERSION)),)
+	ADD_MODULES=--add-modules jdk.incubator.foreign
+endif

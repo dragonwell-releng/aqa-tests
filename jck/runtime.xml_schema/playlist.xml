@@ -19,7 +19,7 @@
 		<variations>
 			<variation>NoOptions</variation>
 		</variations>
-		<command>$(JCK_CMD_TEMPLATE) tests=xml_schema/boeingData jckRoot=$(JCK_ROOT) jckversion=$(JCK_VERSION) testsuite=RUNTIME; \
+		<command>$(JCK_CMD_TEMPLATE) tests=xml_schema/boeingData testsuite=RUNTIME; \
 	$(TEST_STATUS)</command>
 		<levels>
 			<level>extended</level>
@@ -35,19 +35,13 @@
 				<comment>Disabled on win due to backlog/issues/487. Awaiting some automation improvements, in the interim these targets will be run manually</comment>
 				<platform>x86-64_windows</platform>
 				<version>11</version>
-				<impl>ibm</impl>
-			</disable>
-			<disable>
-				<comment>Disabled on win due to backlog/issues/487. Awaiting some automation improvements, in the interim these targets will be run manually</comment>
-				<platform>x86-64_windows</platform>
-				<version>11</version>
 				<impl>openj9</impl>
 			</disable>
 		</disables>
 		<variations>
 			<variation>NoOptions</variation>
 		</variations>
-		<command>$(JCK_CMD_TEMPLATE) tests=xml_schema/msData jckRoot=$(JCK_ROOT) jckversion=$(JCK_VERSION) testsuite=RUNTIME; \
+		<command>$(JCK_CMD_TEMPLATE) tests=xml_schema/msData testsuite=RUNTIME; \
 	$(TEST_STATUS)</command>
 		<levels>
 			<level>extended</level>
@@ -63,19 +57,13 @@
 				<comment>Disabled on win due to backlog/issues/487. Awaiting some automation improvements, in the interim these targets will be run manually</comment>
 				<platform>x86-64_windows</platform>
 				<version>11</version>
-				<impl>ibm</impl>
-			</disable>
-			<disable>
-				<comment>Disabled on win due to backlog/issues/487. Awaiting some automation improvements, in the interim these targets will be run manually</comment>
-				<platform>x86-64_windows</platform>
-				<version>11</version>
 				<impl>openj9</impl>
 			</disable>
 		</disables>
 		<variations>
 			<variation>NoOptions</variation>
 		</variations>
-		<command>$(JCK_CMD_TEMPLATE) tests=xml_schema/nistData/atomic jckRoot=$(JCK_ROOT) jckversion=$(JCK_VERSION) testsuite=RUNTIME; \
+		<command>$(JCK_CMD_TEMPLATE) tests=xml_schema/nistData/atomic testsuite=RUNTIME; \
 	$(TEST_STATUS)</command>
 		<levels>
 			<level>extended</level>
@@ -91,19 +79,13 @@
 				<comment>Disabled on win due to backlog/issues/487. Awaiting some automation improvements, in the interim these targets will be run manually</comment>
 				<platform>x86-64_windows</platform>
 				<version>11</version>
-				<impl>ibm</impl>
-			</disable>
-			<disable>
-				<comment>Disabled on win due to backlog/issues/487. Awaiting some automation improvements, in the interim these targets will be run manually</comment>
-				<platform>x86-64_windows</platform>
-				<version>11</version>
 				<impl>openj9</impl>
 			</disable>
 		</disables>
 		<variations>
 			<variation>NoOptions</variation>
 		</variations>
-		<command>$(JCK_CMD_TEMPLATE) tests=xml_schema/nistData/list jckRoot=$(JCK_ROOT) jckversion=$(JCK_VERSION) testsuite=RUNTIME; \
+		<command>$(JCK_CMD_TEMPLATE) tests=xml_schema/nistData/list testsuite=RUNTIME; \
 	$(TEST_STATUS)</command>
 		<levels>
 			<level>extended</level>
@@ -119,19 +101,13 @@
 				<comment>Disabled on win due to backlog/issues/487. Awaiting some automation improvements, in the interim these targets will be run manually</comment>
 				<platform>x86-64_windows</platform>
 				<version>11</version>
-				<impl>ibm</impl>
-			</disable>
-			<disable>
-				<comment>Disabled on win due to backlog/issues/487. Awaiting some automation improvements, in the interim these targets will be run manually</comment>
-				<platform>x86-64_windows</platform>
-				<version>11</version>
 				<impl>openj9</impl>
 			</disable>
 		</disables>
 		<variations>
 			<variation>NoOptions</variation>
 		</variations>
-		<command>$(JCK_CMD_TEMPLATE) tests=xml_schema/nistData/union jckRoot=$(JCK_ROOT) jckversion=$(JCK_VERSION) testsuite=RUNTIME; \
+		<command>$(JCK_CMD_TEMPLATE) tests=xml_schema/nistData/union testsuite=RUNTIME; \
 	$(TEST_STATUS)</command>
 		<levels>
 			<level>extended</level>
@@ -145,7 +121,7 @@
 		<variations>
 			<variation>NoOptions</variation>
 		</variations>
-		<command>$(JCK_CMD_TEMPLATE) tests=xml_schema/sunData jckRoot=$(JCK_ROOT) jckversion=$(JCK_VERSION) testsuite=RUNTIME; \
+		<command>$(JCK_CMD_TEMPLATE) tests=xml_schema/sunData testsuite=RUNTIME; \
 	$(TEST_STATUS)</command>
 		<levels>
 			<level>extended</level>
