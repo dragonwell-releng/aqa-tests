@@ -30,7 +30,7 @@ supported_packages="jdk jre"
 supported_builds="full"
 
 # Supported tests
-supported_tests="external_custom camel derby elasticsearch jacoco jenkins functional-test kafka lucene-solr openliberty-mp-tck payara-mp-tck quarkus quarkus_quickstarts scala system-test thorntail-mp-tck tomcat tomee wildfly wycheproof netty spring"
+supported_tests="external_custom camel derby elasticsearch jacoco jenkins functional-test kafka lucene-solr openliberty-mp-tck payara-mp-tck quarkus quarkus_quickstarts scala system-test tomcat tomee wildfly wycheproof netty spring zookeeper"
 
 function check_version() {
     version=$1
@@ -174,7 +174,7 @@ function set_build() {
 # Reading properties of test.properties file
 function getProperty() {
     PROP_KEY=$1
-    PROP_VALUE=`cat $PROPERTY_FILE | grep "$PROP_KEY" | cut -d'=' -f2`
+    PROP_VALUE=`cat $PROPERTY_FILE | grep "$PROP_KEY" | cut -d'=' -f 2-`
     echo  `sed -e 's/^"//' -e 's/"$//' <<<"$PROP_VALUE"`
 }
 
@@ -183,12 +183,12 @@ function set_external_custom_test_info(){
     test=$1
     check_external_custom_test=$2
     github_url="${EXTERNAL_CUSTOM_REPO}"
-    script="test.sh"
     test_command="${EXTERNAL_TEST_CMD}"
     test_results="testResults"
     tag_version="${EXTERNAL_REPO_BRANCH}"
-    environment_variable="MODE=\"java\""
-    ubuntu_packages="git maven" 
+    environment_variable="MODE=java"
+    ubuntu_packages="git"
+    maven_version="3.8.5"
 }
 
 # Set the valid OSes for the current architectures.
@@ -200,16 +200,21 @@ function set_test_info() {
     echo ${path_to_file}    
     PROPERTY_FILE=${path_to_file}/${test}/test.properties
     github_url=$(getProperty "github_url")
-    script=$(getProperty "script")
+    test_options=$(getProperty "test_options")
     test_results=$(getProperty "test_results")
     ant_version=$(getProperty "ant_version")
     ivy_version=$(getProperty "ivy_version")
     tag_version=$(getProperty "tag_version")
+    gradle_version=$(getProperty "gradle_version")
+    sbt_version=$(getProperty "sbt_version")
+    bazel_version=$(getProperty "bazel_version")
+    openssl_version=$(getProperty "openssl_version")
+    python_version=$(getProperty "python_version")
+    criu_version=$(getProperty "criu_version")
+    maven_version=$(getProperty "maven_version")
     environment_variable=$(getProperty "environment_variable")
-    if [[ ! -z "$environment_variable" ]]; then
-    environment_variable="MODE=\"java\""
-    fi
-    ubuntu_packages=$(getProperty "ubuntu_packages") 
+    localPropertyFile=$(getProperty "localPropertyFile")
+    ubuntu_packages=$(getProperty "ubuntu_packages")
 }
 
 function cleanup_images() {

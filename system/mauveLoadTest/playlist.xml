@@ -99,6 +99,13 @@
 	</test>
 	<test>
 		<testCaseName>MauveMultiThrdLoad_5m</testCaseName>
+		<disables>
+			<disable>
+				<comment>https://github.com/eclipse-openj9/openj9/issues/15253</comment>
+				<version>19+</version>
+				<impl>openj9</impl>
+			</disable>
+		</disables>
 		<variations>
 			<variation>Mode150</variation>
 			<variation>Mode650</variation>
@@ -217,6 +224,7 @@
 			<variation>Mode610-OSRG</variation>
 			<variation>Mode612-OSRG</variation>
 			<variation>-Xgcpolicy:gencon -Xgc:dynamicBreadthFirstScanOrdering</variation>
+			<variation>-Xtune:throughput</variation>
 			<!--Note: -Xint modes Mode108, Mode109, Mode550 should be run manually -->
 		</variations>
 		<command>$(SYSTEMTEST_CMD_TEMPLATE) -test=MauveMultiThrdLoadTrc -test-args=$(Q)timeLimit=5m$(Q); \
@@ -271,6 +279,7 @@
 			<variation>Mode610-OSRG</variation>
 			<variation>Mode612-OSRG</variation>
 			<variation>-Xgcpolicy:gencon -Xgc:dynamicBreadthFirstScanOrdering</variation>
+			<variation>-Xtune:throughput</variation>
 			<!--Note: -Xint modes Mode108, Mode109, Mode550 should be run manually -->
 		</variations>
 		<command>$(SYSTEMTEST_CMD_TEMPLATE) -test=MauveSingleThrdLoadTrc -test-args=$(Q)timeLimit=5m$(Q); \
@@ -320,6 +329,7 @@
 			<variation>Mode610-OSRG</variation>
 			<variation>Mode612-OSRG</variation>
 			<variation>-Xgcpolicy:gencon -Xgc:dynamicBreadthFirstScanOrdering</variation>
+			<variation>-Xtune:throughput</variation>
 			<!--Note: -Xint modes Mode108, Mode109, Mode550 should be run manually -->
 		</variations>
 		<command>$(SYSTEMTEST_CMD_TEMPLATE) -test=MauveSingleInvocLoad -test-args=$(Q)timeLimit=5m$(Q); \

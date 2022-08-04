@@ -13,6 +13,7 @@
 # limitations under the License.
 -->
 <playlist xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../TKG/playlist.xsd">
+	<include>../perf.mk</include>
 	<test>
 		<testCaseName>renaissance-akka-uct</testCaseName>
 		<disables>
@@ -20,7 +21,7 @@
 				<comment>https://github.com/adoptium/aqa-tests/issues/1994#issuecomment-705633262</comment>
 			</disable>
 		</disables>
-		<command>$(JAVA_COMMAND) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)akka-uct.json$(Q) akka-uct; \
+		<command>$(JAVA_COMMAND) $(JVM_OPTIONS) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)akka-uct.json$(Q) akka-uct; \
 		$(TEST_STATUS)</command>
 		<levels>
 			<level>sanity</level>
@@ -33,11 +34,19 @@
 		<testCaseName>renaissance-als</testCaseName>
 		<disables>
 			<disable>
-				<comment>https://github.com/adoptium/aqa-tests/issues/2500#issuecomment-818964862</comment>
-				<version>16+</version>
+				<comment>https://github.com/adoptium/aqa-tests/issues/3189</comment>
+				<platform>x86-32_windows|arm_linux</platform>
+			</disable>
+			<disable>
+				<comment>https://github.com/adoptium/aqa-tests/issues/3469</comment>
+				<version>18+</version>
+			</disable>
+			<disable>
+				<comment>runtimes/infrastructure/issues/5444</comment>
+				<vendor>ibm</vendor>
 			</disable>
 		</disables>
-		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)als.json$(Q) als; \
+		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) $(JVM_OPTIONS) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)als.json$(Q) als; \
 		$(TEST_STATUS)</command>
 		<levels>
 			<level>extended</level>
@@ -50,11 +59,19 @@
 		<testCaseName>renaissance-chi-square</testCaseName>
 		<disables>
 			<disable>
-				<comment>https://github.com/adoptium/aqa-tests/issues/2500#issuecomment-818964098</comment>
-				<version>16+</version>
+				<comment>https://github.com/adoptium/aqa-tests/issues/3189</comment>
+				<platform>x86-32_windows|arm_linux</platform>
+			</disable>
+			<disable>
+				<comment>https://github.com/adoptium/aqa-tests/issues/3469</comment>
+				<version>18+</version>
+			</disable>
+			<disable>
+				<comment>runtimes/infrastructure/issues/5444</comment>
+				<vendor>ibm</vendor>
 			</disable>
 		</disables>
-		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)chi-square.json$(Q) chi-square; \
+		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) $(JVM_OPTIONS) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)chi-square.json$(Q) chi-square; \
 		$(TEST_STATUS)</command>
 		<levels>
 			<level>extended</level>
@@ -75,7 +92,7 @@
 				<platform>^((?!(x86-64_linux|x86-64_mac|x86-64_windows)).)*$</platform>
 			</disable>
 		</disables>
-		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)db-shootout.json$(Q) db-shootout; \
+		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) $(JVM_OPTIONS) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)db-shootout.json$(Q) db-shootout; \
 		$(TEST_STATUS)</command>
 		<!-- Issue https://github.com/renaissance-benchmarks/renaissance/issues/210 -->
 		<platformRequirements>^arch.ppc</platformRequirements>
@@ -90,11 +107,19 @@
 		<testCaseName>renaissance-dec-tree</testCaseName>
 		<disables>
 			<disable>
-				<comment>https://github.com/adoptium/aqa-tests/issues/2255#issuecomment-788234331</comment>
-				<version>16+</version>
+				<comment>https://github.com/adoptium/aqa-tests/issues/3189</comment>
+				<platform>x86-32_windows|arm_linux</platform>
+			</disable>
+			<disable>
+				<comment>https://github.com/adoptium/aqa-tests/issues/3469</comment>
+				<version>18+</version>
+			</disable>
+			<disable>
+				<comment>runtimes/infrastructure/issues/5444</comment>
+				<vendor>ibm</vendor>
 			</disable>
 		</disables>
-		<command>$(JAVA_COMMAND) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)dec-tree.json$(Q) dec-tree; \
+		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) $(JVM_OPTIONS) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)dec-tree.json$(Q) dec-tree; \
 		$(TEST_STATUS)</command>
 		<levels>
 			<level>extended</level>
@@ -110,7 +135,7 @@
 				<comment>https://github.com/renaissance-benchmarks/renaissance/issues/231</comment>
 			</disable>
 		</disables>
-		<command>$(JAVA_COMMAND) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)finagle-chirper.json$(Q) finagle-chirper; \
+		<command>$(JAVA_COMMAND) $(JVM_OPTIONS) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)finagle-chirper.json$(Q) finagle-chirper; \
 		$(TEST_STATUS)</command>
 		<levels>
 			<level>extended</level>
@@ -121,7 +146,7 @@
 	</test>
 	<test>
 		<testCaseName>renaissance-finagle-http</testCaseName>
-		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)finagle-http.json$(Q) finagle-http; \
+		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) $(JVM_OPTIONS) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)finagle-http.json$(Q) finagle-http; \
 		$(TEST_STATUS)</command>
 		<levels>
 			<level>extended</level>
@@ -132,7 +157,7 @@
 	</test>
 	<test>
 		<testCaseName>renaissance-fj-kmeans</testCaseName>
-		<command>$(JAVA_COMMAND) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)fj-kmeans.json$(Q) fj-kmeans; \
+		<command>$(JAVA_COMMAND) $(JVM_OPTIONS) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)fj-kmeans.json$(Q) fj-kmeans; \
 		$(TEST_STATUS)</command>
 		<levels>
 			<level>sanity</level>
@@ -149,7 +174,7 @@
 				<platform>.*windows.*</platform>
 			</disable>
 		</disables>
-		<command>$(JAVA_COMMAND) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)future-genetic.json$(Q) future-genetic; \
+		<command>$(JAVA_COMMAND) $(JVM_OPTIONS) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)future-genetic.json$(Q) future-genetic; \
 		$(TEST_STATUS)</command>
 		<levels>
 			<level>sanity</level>
@@ -162,11 +187,19 @@
 		<testCaseName>renaissance-gauss-mix</testCaseName>
 		<disables>
 			<disable>
-				<comment>https://github.com/adoptium/aqa-tests/issues/2500#issuecomment-818964531</comment>
-				<version>16+</version>
+				<comment>https://github.com/adoptium/aqa-tests/issues/3189</comment>
+				<platform>x86-32_windows|arm_linux</platform>
+			</disable>
+			<disable>
+				<comment>https://github.com/adoptium/aqa-tests/issues/3469</comment>
+				<version>18+</version>
+			</disable>
+			<disable>
+				<comment>runtimes/infrastructure/issues/5444</comment>
+				<vendor>ibm</vendor>
 			</disable>
 		</disables>
-		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)gauss-mix.json$(Q) gauss-mix; \
+		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) $(JVM_OPTIONS) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)gauss-mix.json$(Q) gauss-mix; \
 		$(TEST_STATUS)</command>
 		<levels>
 			<level>extended</level>
@@ -179,11 +212,19 @@
 		<testCaseName>renaissance-log-regression</testCaseName>
 		<disables>
 			<disable>
-				<comment>https://github.com/adoptium/aqa-tests/issues/2500#issuecomment-818964263</comment>
-				<version>16+</version>
+				<comment>https://github.com/adoptium/aqa-tests/issues/3189</comment>
+				<platform>x86-32_windows|arm_linux</platform>
+			</disable>
+			<disable>
+				<comment>https://github.com/adoptium/aqa-tests/issues/3469</comment>
+				<version>18+</version>
+			</disable>
+			<disable>
+				<comment>runtimes/infrastructure/issues/5444</comment>
+				<vendor>ibm</vendor>
 			</disable>
 		</disables>
-		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)log-regression.json$(Q) log-regression; \
+		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) $(JVM_OPTIONS) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)log-regression.json$(Q) log-regression; \
 		$(TEST_STATUS)</command>
 		<levels>
 			<level>extended</level>
@@ -194,7 +235,7 @@
 	</test>
 	<test>
 		<testCaseName>renaissance-mnemonics</testCaseName>
-		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)mnemonics.json$(Q) mnemonics; \
+		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) $(JVM_OPTIONS) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)mnemonics.json$(Q) mnemonics; \
 		$(TEST_STATUS)</command>
 		<levels>
 			<level>extended</level>
@@ -207,11 +248,24 @@
 		<testCaseName>renaissance-movie-lens</testCaseName>
 		<disables>
 			<disable>
-				<comment>https://github.com/adoptium/aqa-tests/issues/2500#issuecomment-818965117</comment>
-				<version>16+</version>
+				<comment>https://github.com/adoptium/aqa-tests/issues/3189</comment>
+				<platform>x86-32_windows|arm_linux</platform>
+			</disable>
+			<disable>
+				<comment>https://github.com/adoptium/aqa-tests/issues/3469</comment>
+				<version>18+</version>
+			</disable>
+			<disable>
+				<comment>https://github.com/adoptium/aqa-tests/issues/3469</comment>
+				<version>17</version>
+				<platform>s390_linux</platform>
+			</disable>
+			<disable>
+				<comment>runtimes/infrastructure/issues/5444</comment>
+				<vendor>ibm</vendor>
 			</disable>
 		</disables>
-		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)movie-lens.json$(Q) movie-lens; \
+		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) $(JVM_OPTIONS) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)movie-lens.json$(Q) movie-lens; \
 		$(TEST_STATUS)</command>
 		<levels>
 			<level>extended</level>
@@ -227,7 +281,7 @@
 				<comment>https://github.com/adoptium/aqa-tests/issues/1932#issuecomment-708781359</comment>
 			</disable>
 		</disables>
-		<command>$(JAVA_COMMAND) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)naive-bayes.json$(Q) naive-bayes; \
+		<command>$(JAVA_COMMAND) $(JVM_OPTIONS) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)naive-bayes.json$(Q) naive-bayes; \
 		$(TEST_STATUS)</command>
 		<levels>
 			<level>sanity</level>
@@ -238,7 +292,7 @@
 	</test>
 	<test>
 		<testCaseName>renaissance-par-mnemonics</testCaseName>
-		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)par-mnemonics.json$(Q) par-mnemonics; \
+		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) $(JVM_OPTIONS) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)par-mnemonics.json$(Q) par-mnemonics; \
 		$(TEST_STATUS)</command>
 		<levels>
 			<level>extended</level>
@@ -249,7 +303,7 @@
 	</test>
 	<test>
 		<testCaseName>renaissance-philosophers</testCaseName>
-		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)philosophers.json$(Q) philosophers; \
+		<command>$(JAVA_COMMAND) $(ADD_OPENS_CMD) $(JVM_OPTIONS) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)philosophers.json$(Q) philosophers; \
 		$(TEST_STATUS)</command>
 		<levels>
 			<level>extended</level>
@@ -260,7 +314,13 @@
 	</test>
 	<test>
 		<testCaseName>renaissance-scala-kmeans</testCaseName>
-		<command>$(TEST_ROOT)$(D)perf$(D)run_with_affinity.sh --exec_cmd $(Q)$(JAVA_COMMAND) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)scala-kmeans.json$(Q) scala-kmeans$(Q) --test_root $(TEST_ROOT); \
+		<disables>
+			<disable>
+				<comment>https://github.com/adoptium/aqa-tests/issues/3244</comment>
+				<platform>x86-64_solaris|sparcv9_solaris</platform>
+			</disable>
+		</disables>
+		<command>$(TEST_ROOT)$(D)perf$(D)run_with_affinity.sh --exec_cmd $(Q)$(JAVA_COMMAND) $(JVM_OPTIONS) -jar $(Q)$(TEST_RESROOT)$(D)renaissance.jar$(Q) --json $(Q)$(REPORTDIR)$(D)scala-kmeans.json$(Q) scala-kmeans$(Q) --test_root $(TEST_ROOT); \
 		$(TEST_STATUS)</command>
 		<levels>
 			<level>sanity</level>

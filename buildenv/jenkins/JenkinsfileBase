@@ -1,4 +1,7 @@
 #!groovy
+import org.tap4j.consumer.TapConsumer;
+import org.tap4j.consumer.TapConsumerFactory;
+import org.tap4j.model.TestSet;
 
 def makeTest(testParam) {
 	String tearDownCmd = "$RESOLVED_MAKE; \$MAKE -f ./aqa-tests/TKG/testEnv.mk testEnvTeardown"
@@ -15,7 +18,7 @@ def setupEnv() {
 	env.JOBSTARTTIME = sh(script: 'LC_TIME=C date +"%a, %d %b %Y %T %z"', returnStdout: true).trim()
 
 	// Check what existing java processes are running
-		echo "PROCESSCATCH: Java processes which are currently on the machine:"
+	echo "PROCESSCATCH: Java processes which are currently on the machine:"
 	if (PLATFORM.contains("windows")) {
 		sh(script:'powershell -c "Get-Process java | select id,processname,starttime"', returnStatus:true)
 	} else {
@@ -71,12 +74,32 @@ def setupEnv() {
 	env.EXTERNAL_TEST_CMD=params.EXTERNAL_TEST_CMD ? params.EXTERNAL_TEST_CMD : "mvn clean install"
 	env.DYNAMIC_COMPILE=params.DYNAMIC_COMPILE ? params.DYNAMIC_COMPILE : false
 	env.BUILD_LIST = params.BUILD_LIST ? params.BUILD_LIST : ""
-	env.TAP_NAME = "${JOB_NAME}.tap"
+	env.USE_JRE=params.USE_JRE ? params.USE_JRE : false
+	env.RERUN_LINK = ""
+	env.FAILED_TEST_TARGET = ""
 
 	ITERATIONS = params.ITERATIONS ? "${params.ITERATIONS}".toInteger() : 1
 
+	if (JOB_NAME.contains("Grinder")) {
+		def currentDate = new Date()
+		def currentDateTime = currentDate.format("yyyyMMddHHmmss", TimeZone.getTimeZone('UTC'))
+		env.TAP_NAME = "${JOB_NAME}_${currentDateTime}.tap"
+	} else {
+		env.TAP_NAME = "${JOB_NAME}.tap"
+	}
+
+	if (params.CODE_COVERAGE) {
+		// GCOV strips # num from folder path in BUILD pipeline, e.g., /home/jenkins/workspace/Build_JDK11_x86-64_linux_Personal/build/linux-x86_64-normal-server-release/vm
+		env.GCOV_PREFIX_STRIP = 1
+		env.GCOV_PREFIX = env.TEST_JDK_HOME
+	}
+
 	if (params.JRE_IMAGE) {
 		env.JRE_IMAGE = "${WORKSPACE}/${params.JRE_IMAGE}"
+	}
+
+	if (params.USE_JRE) {
+		env.USE_JRE = 1
 	}
 
 	if (params.JDK_IMPL) {
@@ -324,6 +347,14 @@ def createJob( TEST_JOB_NAME, ARCH_OS ) {
 	jobParams.put('TEST_JOB_NAME', TEST_JOB_NAME)
 	jobParams.put('ARCH_OS_LIST', ARCH_OS)
 
+	if (params.DAYS_TO_KEEP) {
+		jobParams.put('DAYS_TO_KEEP', DAYS_TO_KEEP)
+	}
+
+	if (params.BUILDS_TO_KEEP) {
+		jobParams.put('BUILDS_TO_KEEP', BUILDS_TO_KEEP)
+	}
+
 	//get level and group if TEST_JOB_NAME matches the format of Test_openjdk11_j9_extended.functional_ppc64_aix
 	//otherwise, use default level and group value in template
 	if (TEST_JOB_NAME.startsWith("Test_openjdk")) {
@@ -357,7 +388,8 @@ def setup() {
 			setupEnv()
 
 			if (params.SDK_RESOURCE == 'nightly' && params.CUSTOMIZED_SDK_URL) {
-				CUSTOMIZED_SDK_URL_OPTION = "-c '${params.CUSTOMIZED_SDK_URL}'"
+				// remove single quote to allow variables to be set in CUSTOMIZED_SDK_URL
+				CUSTOMIZED_SDK_URL_OPTION = "-c ${params.CUSTOMIZED_SDK_URL}"
 			} else if (params.CUSTOMIZED_SDK_URL) {
 				SDK_RESOURCE = "customized"
 				CUSTOMIZED_SDK_URL_OPTION = "-c '${params.CUSTOMIZED_SDK_URL}'"
@@ -375,11 +407,11 @@ def setup() {
 				timeout(time: 1, unit: 'HOURS') {
 					dir('openjdkbinary') {
 						step([$class: 'CopyArtifact',
-							fingerprintArtifacts: true,
-							flatten: true,
-							filter: "**/*.tar.gz,**/*.tgz,**/*.zip,**/*.jar,**/*.Z",
-							projectName: "${params.UPSTREAM_JOB_NAME}",
-							selector: [$class: 'SpecificBuildSelector', buildNumber: "${params.UPSTREAM_JOB_NUMBER}"]])
+							  fingerprintArtifacts: true,
+							  flatten: true,
+							  filter: "**/*.tar.gz,**/*.tgz,**/*.zip,**/*.jar,**/*.Z",
+							  projectName: "${params.UPSTREAM_JOB_NAME}",
+							  selector: [$class: 'SpecificBuildSelector', buildNumber: "${params.UPSTREAM_JOB_NUMBER}"]])
 					}
 				}
 			}
@@ -431,12 +463,12 @@ def setup() {
 			// Only set image required to false if params is set to false. In get.sh, the default value is true
 			TEST_IMAGES_REQUIRED = (params.TEST_IMAGES_REQUIRED == false) ? "--test_images_required false" : ""
 			DEBUG_IMAGES_REQUIRED = (params.DEBUG_IMAGES_REQUIRED == false) ? "--debug_images_required false" : ""
+			CODE_COVERAGE_OPTION = params.CODE_COVERAGE ? "--code_coverage true" : ""
 
 			CURL_OPTS = (params.CURL_OPTS) ? "--curl_opts \"${params.CURL_OPTS}\"" : ""
 
-			GET_SH_CMD = "./get.sh -s `pwd`/.. -p $PLATFORM -r ${SDK_RESOURCE} ${JDK_VERSION_OPTION} ${JDK_IMPL_OPTION} ${CUSTOMIZED_SDK_URL_OPTION} ${CUSTOMIZED_SDK_SOURCE_URL_OPTION} ${CLONE_OPENJ9_OPTION} ${OPENJ9_REPO_OPTION} ${OPENJ9_BRANCH_OPTION} ${OPENJ9_SHA_OPTION} ${TKG_REPO_OPTION} ${TKG_BRANCH_OPTION} ${VENDOR_TEST_REPOS} ${VENDOR_TEST_BRANCHES} ${VENDOR_TEST_DIRS} ${VENDOR_TEST_SHAS} ${TEST_IMAGES_REQUIRED} ${DEBUG_IMAGES_REQUIRED} ${CURL_OPTS}"
 
-
+			GET_SH_CMD = "./get.sh -s `pwd`/.. -p $PLATFORM -r ${SDK_RESOURCE} ${JDK_VERSION_OPTION} ${JDK_IMPL_OPTION} ${CUSTOMIZED_SDK_URL_OPTION} ${CUSTOMIZED_SDK_SOURCE_URL_OPTION} ${CLONE_OPENJ9_OPTION} ${OPENJ9_REPO_OPTION} ${OPENJ9_BRANCH_OPTION} ${OPENJ9_SHA_OPTION} ${TKG_REPO_OPTION} ${TKG_BRANCH_OPTION} ${VENDOR_TEST_REPOS} ${VENDOR_TEST_BRANCHES} ${VENDOR_TEST_DIRS} ${VENDOR_TEST_SHAS} ${TEST_IMAGES_REQUIRED} ${DEBUG_IMAGES_REQUIRED} ${CODE_COVERAGE_OPTION} ${CURL_OPTS}"
 			RESOLVED_MAKE = "if [ `uname` = AIX ] || [ `uname` = SunOS ] || [ `uname` = *BSD ]; then MAKE=gmake; else MAKE=make; fi"
 
 			dir( WORKSPACE) {
@@ -504,16 +536,16 @@ def buildTest() {
 
 			if ( params.PERF_CREDENTIALS_ID ) {
 				withCredentials([usernamePassword(credentialsId: "$params.PERF_CREDENTIALS_ID",
-					passwordVariable: "PASSWORD_VAR", usernameVariable: "USERNAME_VAR")]) {
-						env.PERF_USERNAME = USERNAME_VAR
-						env.PERF_PASSWORD = PASSWORD_VAR
+						passwordVariable: "PASSWORD_VAR", usernameVariable: "USERNAME_VAR")]) {
+					env.PERF_USERNAME = USERNAME_VAR
+					env.PERF_PASSWORD = PASSWORD_VAR
 				}
 			}
 
 			if (params.UPSTREAM_TEST_JOB_NAME && params.UPSTREAM_TEST_JOB_NUMBER) {
 				try {
 					timeout(time: 1, unit: 'HOURS') {
-						copyArtifacts fingerprintArtifacts: true, projectName: params.UPSTREAM_TEST_JOB_NAME, selector: specific(params.UPSTREAM_TEST_JOB_NUMBER), target: './aqa-tests/TKG/'
+						copyArtifacts fingerprintArtifacts: true, projectName: params.UPSTREAM_TEST_JOB_NAME, selector: specific(params.UPSTREAM_TEST_JOB_NUMBER), filter: "**/parallelList.mk", target: './aqa-tests/TKG/'
 					}
 				} catch (Exception e) {
 					echo "Cannot run copyArtifacts from ${params.UPSTREAM_TEST_JOB_NAME} ${params.UPSTREAM_TEST_JOB_NUMBER}. Skipping copyArtifacts..."
@@ -551,12 +583,17 @@ def buildTest() {
 			if (!params.DYNAMIC_COMPILE) {
 				if(params.CUSTOMIZED_SDK_URL_CREDENTIAL_ID) {
 					withCredentials([usernamePassword(credentialsId: "${params.CUSTOMIZED_SDK_URL_CREDENTIAL_ID}",
-						usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+							usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
 						makeCompileTest()
 					}
 				} else {
 					makeCompileTest()
 				}
+			}
+
+			if (params.CODE_COVERAGE) {
+				echo "Clean gcda files before generating new Code Coverage info"
+				sh "find ${WORKSPACE}/openjdkbinary/j2sdk-image -name '*.gcda' -type f -delete"
 			}
 		}
 	}
@@ -589,8 +626,8 @@ def runTest( ) {
 			for (int i = 1; i <= ITERATIONS; i++) {
 				echo "ITERATION: ${i}/${ITERATIONS}"
 				if (env.SPEC.startsWith('aix')) {
-					sh "nohup /usr/bin/X11/X -force -vfb -x abx -x dbe -x GLX :0 &"
-					env.DISPLAY = ":0"
+					sh "nohup /usr/bin/X11/X -force -vfb -x abx -x dbe -x GLX -secIP 000 :0 &"
+					env.DISPLAY = "unix:0"
 					echo "env.DISPLAY is ${env.DISPLAY}"
 					makeTest("${RUNTEST_CMD}")
 				}
@@ -604,8 +641,8 @@ def runTest( ) {
 					// Add an additional 10 second timeout due to issue: https://github.com/adoptium/temurin-build/issues/2368#issuecomment-756683888
 					wrap([$class: 'Xvfb', autoDisplayName: true, timeout:10]) {
 						def DISPLAY = sh (
-							script: 'ps -f  | grep \'[X]vfb\' | awk \'{print \$9}\'',
-							returnStdout: true
+								script: 'ps -f  | grep \'[X]vfb\' | awk \'{print \$9}\'',
+								returnStdout: true
 						).trim()
 						env.DISPLAY = "${DISPLAY}"
 						echo "env.DISPLAY is ${env.DISPLAY}"
@@ -614,6 +651,16 @@ def runTest( ) {
 				}
 				else {
 					makeTest("${RUNTEST_CMD}")
+				}
+			}
+
+			if (params.CODE_COVERAGE) {
+				echo 'Generating Code Coverage Reports...'
+				dir("$WORKSPACE/openjdkbinary/j2sdk-image") {
+					// Current lcov generates "Cannot open source file" info, but does not affect results, since Build and Test paths difference are corrected after summary.
+					sh "lcov --capture --quiet --directory . --output-file codeCoverageInfoOrigin.info --rc geninfo_adjust_src_path='/home/jenkins/workspace/ => ${WORKSPACE}/openjdkbinary/j2sdk-image/jenkins/workspace/'"
+					sh "lcov --quiet --output-file codeCoverageInfoFinal.info --remove codeCoverageInfoOrigin.info '/usr/include/*' '/usr/local/*' '/home/*/attrlookup.gperf'"
+					sh "genhtml --quiet codeCoverageInfoFinal.info --output-directory code_coverage_report"
 				}
 			}
 		}
@@ -651,29 +698,23 @@ def post(output_name) {
 				tar_cmd_suffix = ""
 			}
 
-			boolean failIfNoResultsValue = true
-			if (params.PARALLEL && params.PARALLEL != "None") {
-				failIfNoResultsValue = false
-			}
-			step([$class: "TapPublisher", testResults: "**/*.tap", outputTapToConsole: false, failIfNoResults: failIfNoResultsValue])
-
-			// only archive children TAP result in parallel mode, the file will be copied into the parent job after parallel runs
-			if (params.UPSTREAM_TEST_JOB_NAME && params.UPSTREAM_TEST_JOB_NUMBER) {
-				archiveArtifacts artifacts: "**/*.tap", fingerprint: true, allowEmptyArchive: true
-			}
+			step([$class: "TapPublisher", testResults: "**/*.tap", outputTapToConsole: false, failIfNoResults: true])
 
 			junit allowEmptyResults: true, keepLongStdio: true, testResults: '**/work/**/*.jtr.xml, **/junitreports/**/*.xml, **/external_test_reports/**/*.xml'
-			archiveSHAFile()
-			archiveTestenvFile()
+
+			//call the archive function for each file
+			archiveFile("aqa-tests/testenv/testenv.properties", true)
+			archiveFile("**/*.tap", true)
+			archiveAQAvitFiles()
 
 			if (env.BUILD_LIST.startsWith('jck')) {
 				xunit (
-				tools: [Custom(customXSL: "$WORKSPACE/aqa-tests/jck/xUnit.xsl",
-					deleteOutputFiles: true,
-					failIfNotNew: true,
-					pattern: "**/TKG/output_*/**/report.xml",
-					skipNoTestFiles: true,
-					stopProcessingIfError: true)]
+						tools: [Custom(customXSL: "$WORKSPACE/aqa-tests/jck/xUnit.xsl",
+								deleteOutputFiles: true,
+								failIfNotNew: true,
+								pattern: "**/TKG/output_*/**/report.xml",
+								skipNoTestFiles: true,
+								stopProcessingIfError: true)]
 				)
 			}
 
@@ -696,14 +737,39 @@ def post(output_name) {
 					sh "${tar_cmd} ${test_output_tar_name} ${pax_opt} ./aqa-tests/TKG/output_* ${tar_cmd_suffix}"
 				}
 
+				// TODO: archiveFile() should be used
 				if (!params.ARTIFACTORY_SERVER) {
 					echo "ARTIFACTORY_SERVER is not set. Saving artifacts on jenkins."
 					archiveArtifacts artifacts: test_output_tar_name, fingerprint: true, allowEmptyArchive: true
+					if (env.BUILD_LIST.startsWith('external')) {
+						def dockerFile = "**/Dockerfile.*"
+						archiveArtifacts artifacts: dockerFile, fingerprint: true, allowEmptyArchive: true
+					}
 				} else {
 					def pattern = "${env.WORKSPACE}/*_output.*"
 					uploadToArtifactory(pattern)
 				}
 			}
+
+			if (params.CODE_COVERAGE) {
+				echo "Archive Code Coverage Report"
+				def code_coverage_report_tar_name = "${output_name}_code_coverage_report${suffix}"
+				dir("${WORKSPACE}/openjdkbinary/j2sdk-image") {
+					if (tar_cmd.startsWith('tar')) {
+						sh "${tar_cmd} - ${pax_opt} codeCoverageInfoFinal.info code_coverage_report ${tar_cmd_suffix} > ${code_coverage_report_tar_name}"
+					} else {
+						sh "${tar_cmd} ${code_coverage_report_tar_name} ${pax_opt} codeCoverageInfoFinal.info code_coverage_report ${tar_cmd_suffix}"
+					}
+				}
+				if (!params.ARTIFACTORY_SERVER) {
+					echo "ARTIFACTORY_SERVER is not set. Saving artifacts on jenkins."
+					archiveArtifacts artifacts: code_coverage_report_tar_name, fingerprint: true, allowEmptyArchive: true
+				} else {
+					def pattern = "${env.WORKSPACE}/*_code_coverage_report.*"
+					uploadToArtifactory(pattern)
+				}
+			}
+			addFailedTestsGrinderLink()
 		}
 	}
 }
@@ -741,7 +807,7 @@ def testBuild() {
 
 			if (!params.KEEP_WORKSPACE) {
 				// cleanWs() does not work in some cases, so set opts below
-				cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
+				cleanWs disableDeferredWipeout: true, deleteDirs: true
 				// clean up remaining core files
 				if (PLATFORM.contains("mac")) {
 					sh "find /cores -name '*core*' -print 2>/dev/null -exec rm -f {} \\; || true"
@@ -776,7 +842,7 @@ def terminateJavaProcesses() {
 			} else {
 				// No more spawned, we are done...
 				break
-						}
+			}
 		} else {
 			// Non-Windows code from https://ci.adoptopenjdk.net/job/SXA-processCheck
 			echo "PROCESSCATCH: Checking for any leftover java processes on the machine"
@@ -791,14 +857,14 @@ def terminateJavaProcesses() {
 
 		// Pause between iterations in case of spawning processes
 		sleep(2)
-		}
+	}
 
-		echo "PROCESSCATCH: Removed processes - here is what is remaining:"
-		if (PLATFORM.contains("windows")) {
+	echo "PROCESSCATCH: Removed processes - here is what is remaining:"
+	if (PLATFORM.contains("windows")) {
 		sh(script:'powershell -c "Get-Process java | select id,processname,starttime"', returnStatus:true)
-		} else {
+	} else {
 		sh(script:'ps -fu '+"${env.USER}"+' | grep java | egrep -v "remoting.jar|agent.jar|grep"', returnStatus:true)
-		}
+	}
 }
 
 def getJDKImpl(jvm_version) {
@@ -836,29 +902,31 @@ def getJenkinsDomain() {
 	return domainName
 }
 
-def archiveTestenvFile() {
-	def testenvFile = "aqa-tests/testenv/testenv.properties";
-	if (!params.ARTIFACTORY_SERVER) {
-		echo "ARTIFACTORY_SERVER is not set. Saving testenv.properties file on jenkins."
-		archiveArtifacts artifacts: testenvFile, fingerprint: true, allowEmptyArchive: true
-	} else {
-		def pattern = "${env.WORKSPACE}/${testenvFile}"
+def archiveAQAvitFiles() {
+	if (params.USE_TESTENV_PROPERTIES && !JOB_NAME.contains("_testList_")) {
+		if (params.ARTIFACTORY_SERVER) {
+			def currentDate = new Date()
+			def currentDateTime = currentDate.format("yyyyMMddHHmmss", TimeZone.getTimeZone('UTC'))
+			def uploadDir = "AQAvit/${JDK_IMPL}/${ADOPTOPENJDK_BRANCH}/${JDK_VERSION}/${PLATFORM}/${currentDateTime}"
+			uploadToArtifactory("${env.WORKSPACE}/**/*.tap", uploadDir)
+		}
+	}
+}
+
+// If forceStoreOnJenkins set to true, archive on Jenkins.
+// If forceStoreOnJenkins set to false, archive on Artifactory if ARTIFACTORY_SERVER is provided. Otherwise, archive on Jenkins
+def archiveFile(filename, forceStoreOnJenkins) {
+	if (!params.ARTIFACTORY_SERVER || forceStoreOnJenkins) {
+		echo "Saving ${filename} file on jenkins."
+		archiveArtifacts artifacts: filename, fingerprint: true, allowEmptyArchive: true
+	} 
+	if (params.ARTIFACTORY_SERVER) {
+		def pattern = "${env.WORKSPACE}/${filename}"
 		uploadToArtifactory(pattern)
 	}
 }
 
-def archiveSHAFile() {
-	def shaFile = "aqa-tests/TKG/SHA.txt";
-	if (!params.ARTIFACTORY_SERVER) {
-		echo "ARTIFACTORY_SERVER is not set. Saving SHA file on jenkins."
-		archiveArtifacts artifacts: shaFile, fingerprint: true, allowEmptyArchive: true
-	} else {
-		def pattern = "${env.WORKSPACE}/${shaFile}"
-		uploadToArtifactory(pattern)
-	}
-}
-
-def uploadToArtifactory(pattern) {
+def uploadToArtifactory(pattern, artifactoryUploadDir="") {
 	if (params.ARTIFACTORY_SERVER) {
 		def server = Artifactory.server params.ARTIFACTORY_SERVER
 		def artifactoryRepo = params.ARTIFACTORY_REPO ? params.ARTIFACTORY_REPO : "sys-rt-generic-local"
@@ -866,30 +934,59 @@ def uploadToArtifactory(pattern) {
 		if (artifactoryRoorDir.endsWith("/")) {
 			artifactoryRoorDir = artifactoryRoorDir.substring(0, artifactoryRoorDir.length() - 1);
 		}
-		def artifactoryUploadDir = "${artifactoryRepo}/${artifactoryRoorDir}/${JOB_NAME}/${BUILD_ID}/"
+		def fullUploadPath = "${artifactoryRepo}/${artifactoryRoorDir}/${JOB_NAME}/${BUILD_ID}/"
+		if (artifactoryUploadDir) {
+			fullUploadPath = "${artifactoryRepo}/${artifactoryRoorDir}/${artifactoryUploadDir}/"
+		}
 
 		def uploadSpec = """{
 			"files":[
 					{
 						"pattern": "${pattern}",
-						"target": "${artifactoryUploadDir}"
+						"target": "${fullUploadPath}"
 					}
 				]
 			}"""
 
 		def buildInfo = Artifactory.newBuildInfo()
-		// if ARTIFACTORY_NUM_ARTIFACTS is not set, set to keep 20 build artifacts
-		def numArtifacts = params.ARTIFACTORY_NUM_ARTIFACTS ? params.ARTIFACTORY_NUM_ARTIFACTS : 20
 
-		buildInfo.retention maxBuilds: numArtifacts, deleteBuildArtifacts: true
+		if (artifactoryUploadDir && artifactoryUploadDir.contains("AQAvit")) {
+			buildInfo.name = "sys-rt/AQAvit_" + buildInfo.name
+		} else {
+			def numArtifacts = params.ARTIFACTORY_NUM_ARTIFACTS ?: -1
+			def numDays = 20
+			if (params.ARTIFACTORY_NUM_DAYS) {
+				numDays = params.ARTIFACTORY_NUM_DAYS
+			} else {
+				if (ARTIFACTORY_SERVER.contains("ci-eclipse-openj9")) {
+					if (JOB_NAME.contains("Grinder")) {
+						numDays = 7
+					} else {
+						numDays = 25
+					}
+				} else {
+					if (JOB_NAME.contains("Grinder")) {
+						numDays = 20
+					} else {
+						numDays = 45
+					}
+				}
+			}
+			buildInfo.retention maxBuilds: numArtifacts, maxDays: numDays, deleteBuildArtifacts: true
+		}
 		server.upload spec: uploadSpec, buildInfo: buildInfo
 		server.publishBuildInfo buildInfo
 
 		def artifactoryUrl = server.getUrl()
-		def uploadUrl = "${artifactoryUrl}/${artifactoryUploadDir}"
-		echo "Test output artifactory URL:'${uploadUrl}'"
+		def uploadUrl = "${artifactoryUrl}/${fullUploadPath}"
 		if (!currentBuild.description.contains(uploadUrl)) {
-			currentBuild.description += "<br><a href=${uploadUrl}>Artifacts</a>"
+			if (uploadUrl.contains("AQAvit")) {
+				echo "AQAvit files artifactory URL:'${uploadUrl}'"
+				currentBuild.description += "<br><a href=${uploadUrl}>AQAvit Artifacts</a>"
+			} else {
+				echo "Test output artifactory URL:'${uploadUrl}'"
+				currentBuild.description += "<br><a href=${uploadUrl}>Artifacts</a>"
+			}
 		}
 	} else {
 		echo "ARTIFACTORY_SERVER is not set. Artifacts are not uploaded onto artifactory server."
@@ -900,23 +997,62 @@ def addGrinderLink() {
 	String url = "${HUDSON_URL}job/Grinder/parambuild/?"
 	int i = 1;
 	def labelValue = ""
-	params.each { key, value ->
+	def targetValue = ""
+	def urlParams = params.findAll {
+		// Exclude separator and help text parameters from url
+		!(it.key.endsWith('_PARAMS') || it.key.endsWith('_HELP_TEXT'))
+	}
+	urlParams.each { key, value ->
 		value = URLEncoder.encode(value.toString(), "UTF-8")
 		url += "${key}=${value}"
-		if (i != params.size()) {
+		if (i != urlParams.size()) {
 			url += "&amp;"
 		}
 		i++;
 		if ( key == "LABEL" ) {
 			labelValue = "LABEL=${value}"
 		}
+		if ( key == "TARGET" ) {
+			targetValue = "TARGET=${value}"
+		}
 	}
+	env.RERUN_LINK = url
+	env.FAILED_TEST_TARGET = targetValue
+	currentBuild.description += "<br><a href=\"https://github.com/adoptium/aqa-tests/wiki/How-to-Run-a-Grinder-Build-on-Jenkins\">Grinder Wiki</a>"
 	echo "Rerun in Grinder: ${url}"
 	currentBuild.description += "<br><a href=${url}>Rerun in Grinder</a> Change TARGET to run only the failed test targets."
 	def sameMachineUrl = url.replace(labelValue,"LABEL=${NODE_NAME}")
 	echo "Rerun in Grinder on same machine: ${sameMachineUrl}"
 	currentBuild.description += "<br><a href=${sameMachineUrl}>Rerun in Grinder on same machine</a> Change TARGET to run only the failed test targets. For dynamic vm agents as they are created at runtime and quickly recycled, it may not be possible to rerun on the same agent."
-	currentBuild.description += "<br><a href=\"https://github.com/adoptium/aqa-tests/wiki/How-to-Run-a-Grinder-Build-on-Jenkins\">Grinder Wiki</a>"
+}
+
+def addFailedTestsGrinderLink(paths=""){
+	if (currentBuild.result == 'UNSTABLE' || currentBuild.result == 'FAILURE' || currentBuild.result == 'ABORTED') {
+		def failedTestList = ""
+		List<String> buildPaths = paths.split(',')
+		for (def buildPath: buildPaths) {
+			def tapFiles = findFiles(glob: "${buildPath}**/*.tap")
+			for (def tapFile: tapFiles) {
+				echo "Tap file found: ${tapFile}..."
+				def file = readFile(file: "${tapFile}")
+				TapConsumer tapConsumer = TapConsumerFactory.makeTap13Consumer()
+				TestSet testSet = tapConsumer.load(file)
+				for (int i = 1; i <= testSet.getNumberOfTestResults(); i++) {
+					if (!testSet.getTestResult(i).getStatus().toString().equals("ok")) {
+						def failedtest = testSet.getTestResult(i).getDescription().substring(2)
+						failedTestList += "${failedtest},"
+					}
+				}
+			}
+		}
+		if (failedTestList) {
+			failedTestList = "testList+TESTLIST=" + failedTestList.substring(0, failedTestList.length() - 1)
+			String url = env.RERUN_LINK
+			def failedTestUrl = url.replace(env.FAILED_TEST_TARGET, "TARGET=$failedTestList")
+			echo "Rerun in Grinder with failed test targets: ${failedTestUrl}"
+			currentBuild.description += "<br><a href=${failedTestUrl}> Rerun in Grinder with failed test targets</a>"
+		}
+	}
 }
 
 def run_parallel_tests() {
@@ -924,27 +1060,41 @@ def run_parallel_tests() {
 		stage ("Parallel Tests") {
 			def childJobs = parallel parallel_tests
 			node {
-				def buildResult = ""
-				childJobs.each {
-					cjob ->
-					def jobInvocation = cjob.value.getRawBuild()
-					def buildId = jobInvocation.getNumber()
-					def name = cjob.value.getProjectName()
-					def childResult = cjob.value.getCurrentResult()
-					try {
-						echo "${name} #${buildId} completed with status ${childResult}"
-						timeout(time: 1, unit: 'HOURS') {
-							copyArtifacts (projectName: "${name}", selector: specific("${buildId}"), filter: "**/*.tap", target:"${name}/${buildId}")
-						}
-						step([$class: "TapPublisher", testResults: "${name}/${buildId}/**/*.tap", outputTapToConsole: false, failIfNoResults: false])
-					} catch (Exception e) {
-						echo "Cannot copy *.tap from ${name} with buildid ${buildId} . Skipping copyArtifacts..."
-						buildResult = childResult
+				// cleanWs() does not work in some cases, so set opts below
+				cleanWs disableDeferredWipeout: true, deleteDirs: true
+				try {
+					def buildResult = ""
+					def buildPaths = ""
+					childJobs.each {
+						cjob ->
+							def jobInvocation = cjob.value.getRawBuild()
+							def buildId = jobInvocation.getNumber()
+							def name = cjob.value.getProjectName()
+							def childResult = cjob.value.getCurrentResult()
+							try {
+								echo "${name} #${buildId} completed with status ${childResult}"
+								timeout(time: 1, unit: 'HOURS') {
+									copyArtifacts (projectName: "${name}", selector: specific("${buildId}"), filter: "**/*.tap", target:"${name}/${buildId}")
+								}
+								step([$class: "TapPublisher", testResults: "${name}/${buildId}/**/*.tap", outputTapToConsole: false, failIfNoResults: true])
+								archiveFile("${name}/${buildId}/**/*.tap", true)
+								buildPaths += "${name}/${buildId}/,"
+							} catch (Exception e) {
+								echo "Cannot copy *.tap or AQACert.log from ${name} with buildid ${buildId} . Skipping copyArtifacts..."
+								buildResult = childResult
+							}
 					}
-				}
-				if (buildResult) {
-					echo "set build status to ${buildResult}"
-					currentBuild.result = buildResult
+					if (buildResult) {
+						echo "set build status to ${buildResult}"
+						currentBuild.result = buildResult
+					}
+					archiveAQAvitFiles()
+					if (buildPaths.length() > 0) {
+						addFailedTestsGrinderLink(buildPaths.substring(0, buildPaths.length() - 1))
+					}
+				} finally {
+					// cleanWs() does not work in some cases, so set opts below
+					cleanWs disableDeferredWipeout: true, deleteDirs: true
 				}
 			}
 		}

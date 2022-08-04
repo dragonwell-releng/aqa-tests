@@ -15,6 +15,9 @@
 
 setData() {
     . ${BASE}/../data/test_${FULLLANG}
+    ${JAVA_BIN}/java -XshowSettings:properties -version 2>&1 | perl -e 'while(<>){$rc=$1 if /^\s+java\.version = (\d+)/;}$rc=8 if $rc==1;exit($rc);'
+    export JAVA_VER=$?
+    test ${JAVA_VER} -ge 18 && export JAVAC_OPTIONS=-J-Dfile.encoding=COMPAT && export JAVA_OPTIONS=-Dfile.encoding=COMPAT
 }
 
 showMessage() {
@@ -30,6 +33,15 @@ if [ "x$JAVA_BIN" = "x" ]; then
     fi
 fi
 
+unset LC_ALL
+OS=`uname`
+LOC=`locale charmap 2>&1`
+if [ "${LOC}" != "${LOC%% *}" ]; then
+    FULLLANG=${LANG}
+    showMessage
+fi
+FULLLANG=${OS}_${LANG%.*}.${LOC}
+
 case "${FULLLANG}" in
     "AIX_Ja_JP.IBM-943"|\
     "AIX_ja_JP.IBM-eucJP"|\
@@ -42,6 +54,10 @@ case "${FULLLANG}" in
     "AIX_zh_TW.IBM-eucTW"|\
     "AIX_Zh_TW.big5"|\
     "AIX_ZH_TW.UTF-8"|\
+    "Darwin_ja_JP.UTF-8"|\
+    "Darwin_ko_KR.UTF-8"|\
+    "Darwin_zh_CN.UTF-8"|\
+    "Darwin_zh_TW.UTF-8"|\
     "Linux_ja_JP.UTF-8"|\
     "Linux_ko_KR.UTF-8"|\
     "Linux_zh_CN.UTF-8"|\

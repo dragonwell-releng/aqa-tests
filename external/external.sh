@@ -28,12 +28,15 @@ testtarget=""
 reportdst="false"
 reportsrc="false"
 docker_args=""
+mountV=""
+imageArg=""
+
 
 usage () {
 	echo 'Usage : external.sh  --dir TESTDIR --tag DOCKERIMAGE_TAG --version JDK_VERSION --impl JDK_IMPL [--reportsrc appReportDir] [--reportdst REPORTDIR] [--testtarget target] [--docker_args EXTRA_DOCKER_ARGS] [--build|--run|--clean]'
 }
 
-supported_tests="external_custom camel derby elasticsearch jacoco jenkins functional-test kafka lucene-solr openliberty-mp-tck payara-mp-tck quarkus quarkus_quickstarts scala system-test thorntail-mp-tck tomcat tomee wildfly wycheproof netty spring"
+supported_tests="external_custom camel derby elasticsearch jacoco jenkins functional-test kafka lucene-solr openliberty-mp-tck payara-mp-tck quarkus quarkus_quickstarts scala system-test tomcat tomee wildfly wycheproof netty spring"
 
 function check_test() {
     test=$1
@@ -77,7 +80,8 @@ parseCommandLineArgs() {
 				if [ -z ${1+x} ]; then 
 					echo "No EXTRA_DOCKER_ARGS set"; 
 				else 
-  					docker_args="--rm $1"; shift;
+  					docker_args="$1"; shift;
+  					parse_docker_args $docker_args;
 				fi;;
 				
 			"--tag" | "-t" )
@@ -125,33 +129,39 @@ function parse_tag() {
     		package=jre
 		;;
 	esac
-	# set BUILD_TYPE
-	case $tag in
-   		*-slim*|*_slim*) 
-   			build_type=slim
-   		;;
-	esac
+	
 	# set DOCKER_OS
 	case $tag in
-   		*alpine*) 
-	   		docker_os=alpine;;
-   		*debianslim*) 
-	   		docker_os=debianslim;;
-		*debian*) 
-	   		docker_os=debian;;
-		*centos*) 
-	   		docker_os=centos;;
-		*clefos*) 
-	   		docker_os=clefos;;
-		*ubi-minimal*) 
-	   		docker_os=ubi-minimal;;
-		*ubi*) 
-	   		docker_os=ubi;;
+	
 		*ubuntu*|*latest*|*nightly*) 
 	   		docker_os=ubuntu;;
    		*) echo "Unable to recognize DOCKER_OS from DOCKERIMAGE_TAG = $tag!";;
-	esac     
+	esac
+	
 }
+
+function parse_docker_args() {
+# parse docker_args to two variable: mountV and  imageArg
+	mountV=""; 
+	while [[ $# -gt 0 ]] && [[ ."$1" = .-* ]] ; do
+		opt="$1";
+		shift; 
+
+		case "$opt" in
+			"--volume" | "-v" )
+				mountV="${mountV} -v $1 ";
+				shift;;
+			"--tmpfs" | "-v" )
+				mountV="${mountV} --tmpfs $1 ";
+				shift;;
+			"--image" | "-i" )
+				imageArg="$1"; 
+				shift;;
+			*) echo >&2 "Invalid docker args option: ${opt}"; exit 1;
+		esac
+	done
+}
+
 
 function docker-ip() {
   docker inspect --format '{{ .NetworkSettings.IPAddress }}' "$@"
@@ -163,7 +173,8 @@ parseCommandLineArgs "$@"
 # DOCKER_HOST=$(docker-ip $test-test)
 
 if [ $command_type == "build" ]; then
-	source $(dirname "$0")/build_image.sh $test $version $impl $docker_os $package $build_type $check_external_custom
+	echo "build_image.sh $test $version $impl $docker_os $package $build_type $check_external_custom $imageArg"
+	source $(dirname "$0")/build_image.sh $test $version $impl $docker_os $package $build_type $check_external_custom $imageArg
 fi
 
 if [ $command_type == "run" ]; then
@@ -171,12 +182,20 @@ if [ $command_type == "run" ]; then
 			test="$(echo ${EXTERNAL_CUSTOM_REPO} | awk -F'/' '{print $NF}' | sed 's/.git//g')"
 	fi
 	if [ $reportsrc != "false" ]; then
-		echo "docker run $docker_args --name $test-test adoptopenjdk-$test-test:${JDK_VERSION}-$package-$docker_os-${JDK_IMPL}-$build_type $testtarget"
-		docker run $docker_args --name $test-test adoptopenjdk-$test-test:${JDK_VERSION}-$package-$docker_os-${JDK_IMPL}-$build_type $testtarget;
+		echo "docker run --privileged $mountV --name $test-test adoptopenjdk-$test-test:${JDK_VERSION}-$package-$docker_os-${JDK_IMPL}-$build_type $testtarget"
+		if [ -n "$testtarget" ]; then
+			docker run --privileged $mountV --name $test-test adoptopenjdk-$test-test:${JDK_VERSION}-$package-$docker_os-${JDK_IMPL}-$build_type "$testtarget";
+		else
+			docker run --privileged $mountV --name $test-test adoptopenjdk-$test-test:${JDK_VERSION}-$package-$docker_os-${JDK_IMPL}-$build_type;
+		fi
 		docker cp $test-test:$reportsrc $reportdst/external_test_reports;
 	else
-		echo "docker run $docker_args --rm adoptopenjdk-$test-test:${JDK_VERSION}-$package-$docker_os-${JDK_IMPL}-$build_type $testtarget"
-		docker run $docker_args --rm adoptopenjdk-$test-test:${JDK_VERSION}-$package-$docker_os-${JDK_IMPL}-$build_type $testtarget;
+		echo "docker run --privileged $mountV --rm adoptopenjdk-$test-test:${JDK_VERSION}-$package-$docker_os-${JDK_IMPL}-$build_type $testtarget"
+		if [ -n "$testtarget" ]; then
+			docker run --privileged $mountV --rm adoptopenjdk-$test-test:${JDK_VERSION}-$package-$docker_os-${JDK_IMPL}-$build_type "$testtarget";
+		else
+			docker run --privileged $mountV --rm adoptopenjdk-$test-test:${JDK_VERSION}-$package-$docker_os-${JDK_IMPL}-$build_type;
+		fi
 	fi
 fi
 
@@ -184,8 +203,5 @@ if [ $command_type == "clean" ]; then
 	if [[ ${test} == 'external_custom' ]]; then
 			test="$(echo ${EXTERNAL_CUSTOM_REPO} | awk -F'/' '{print $NF}' | sed 's/.git//g')"
 	fi
-	if [ $reportsrc != "false" ]; then
-		docker rm -f $test-test;
-	fi
-	docker rmi -f adoptopenjdk-$test-test:${JDK_VERSION}-$package-$docker_os-${JDK_IMPL}-$build_type
+	docker rm -f $test-test; docker rmi -f adoptopenjdk-$test-test:${JDK_VERSION}-$package-$docker_os-${JDK_IMPL}-$build_type
 fi

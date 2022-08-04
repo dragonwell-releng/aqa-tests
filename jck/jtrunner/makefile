@@ -28,6 +28,13 @@
 OS:=$(shell uname -s | tr "[:upper:]" "[:lower:]")
 ARCH:=$(shell uname -m | tr "[:upper:]" "[:lower:]")
 
+# We need to determine if the platform is Alpine Linux or not
+ifeq ($(OS),linux)
+	ifneq (,$(wildcard /etc/alpine-release))
+		OS:=alpine-linux
+	endif
+endif
+
 ifneq (,$(findstring cygwin,$(OS)))
 	OS:=win
 endif
@@ -167,7 +174,7 @@ ifeq ($(OS),sunos)
 endif
 
 ifeq ($(OS),aix)
-	CC=/opt/IBM/xlC/13.1.3/bin/xlc
+	CC=/opt/IBM/xlC/16.1.0/bin/xlc
 	CFLAGS=-qstaticinline -q$(BitMode) -I$(UNIX_PATH) -I$(OSX_PATH) -I$(SRC_PATH)
 	LDFLAGS=-G -q$(BitMode)
 endif
@@ -212,6 +219,7 @@ ifeq ($(OS),win)
 	IFLAGS=/I. /I"$(JAVA_HOME)/../include" /I"$(SRCDIR)$(D)src$(D)share$(D)lib$(D)jni$(D)include$(D)win32" /I"$(SRCDIR)$(D)src$(D)share$(D)lib$(D)jni$(D)include$(D)windows" /I"$(SRCDIR)" /I"$(SRCDIR)$(D)src" /I"$(SRCDIR)$(D)src$(D)share$(D)lib$(D)jni$(D)include" /I"$(SRCDIR)$(D)src$(D)share$(D)lib$(D)jvmti$(D)include"
 	CFLAGS=/DWIN32 /D_AMD64_ /D_WINDOWS /LD /MD $(IFLAGS)
 	LFLAGS=/NOLOGO /DLL /INCREMENTAL:NO /NODEFAULTLIB:LIBCMTD /OUT:
+	LDFLAGS=
 	LINK_CMD=$(CMD_PREFIX) link
 	CC=cl
 	LIBPREF=
@@ -261,8 +269,9 @@ help:
 
 build:createdir $(OBJS) installjmx
 
+# We need the extra include for 16+
 ifeq ($(OS),win)
-ifneq (,$(findstring 16,$(SRCDIR)))
+ifeq ($(shell test $(JDK_VERSION) -gt 15; echo $$?),0)
 EXTRAJCKJNIDEP=$(SRCDIR)\src\share\lib\jni\include\windows\jckjni_md.h-DIST
 
 $(EXTRAJCKJNIDEP):

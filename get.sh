@@ -38,14 +38,15 @@ TYPE="jdk"
 TEST_IMAGES_REQUIRED=true
 DEBUG_IMAGES_REQUIRED=true
 CURL_OPTS="s"
+CODE_COVERAGE=false
 
 usage ()
 {
 	echo 'Usage : get.sh -platform|-p x64_linux | x64_mac | s390x_linux | ppc64le_linux | aarch64_linux | ppc64_aix'
-	echo '                [--jdk_version|-j ]: optional. JDK version'
-	echo '                [--jdk_impl|-i ]: optional. JDK implementation'
-	echo '                [--releases|-R ]: optional. Example: latest, jdk8u172-b00-201807161800'
-	echo '                [--type|-T ]: optional. jdk or jre'
+	echo '                [--jdk_version|-j ] : optional. JDK version'
+	echo '                [--jdk_impl|-i ] : optional. JDK implementation'
+	echo '                [--releases|-R ] : optional. Example: latest, jdk8u172-b00-201807161800'
+	echo '                [--type|-T ] : optional. jdk or jre'
 	echo '                [--sdkdir|-s binarySDKDIR] : if do not have a local sdk available, specify preferred directory'
 	echo '                [--sdk_resource|-r ] : indicate where to get sdk - releases, nightly , upstream or customized'
 	echo '                [--customizedURL|-c ] : indicate sdk url if sdk source is set as customized.  Multiple urls can be passed with space as separator'
@@ -62,11 +63,12 @@ usage ()
 	echo '                [--vendor_shas ] : optional. Comma separated SHAs of the vendor repositories'
 	echo '                [--vendor_branches ] : optional. Comma separated vendor branches'
 	echo '                [--vendor_dirs ] : optional. Comma separated directories storing vendor test resources'
+	echo '                [--code_coverage ] : optional. indicate if code coverage is required'
 }
 
 parseCommandLineArgs()
 {
-	while [[ $# -gt 0 ]] && [[ ."$1" = .-* ]] ; do
+	while [ $# -gt 0 ] && [[ ."$1" = .-* ]] ; do
 		opt="$1";
 		shift;
 		case "$opt" in
@@ -138,6 +140,9 @@ parseCommandLineArgs()
 
 			"--debug_images_required" )
 				DEBUG_IMAGES_REQUIRED="$1"; shift;;
+			
+			"--code_coverage" )
+				CODE_COVERAGE="$1"; shift;;
 
 			"--curl_opts" )
 				CURL_OPTS="$1"; shift;;
@@ -183,7 +188,7 @@ getBinaryOpenjdk()
 		done
 		latestBuildUrl="${CUSTOMIZED_SDK_URL}${max}/"
 		echo "downloading files from $latestBuildUrl"
-		download_urls=$(curl -k ${curl_options} ${latestBuildUrl} | grep -E ">.*pax<|>.*tar.gz<|>.*zip<" | sed 's/^.*">//' | sed 's/<\/a>.*//')	
+		download_urls=$(curl -k ${curl_options} ${latestBuildUrl} | grep -E ">.*pax<|>.*tar.gz<|>.*zip<" | sed 's/^.*">//' | sed 's/<\/a>.*//')
 		arr=(${download_urls/ / })
 		download_url=()
 		for n in "${arr[@]}" ; do
@@ -194,7 +199,7 @@ getBinaryOpenjdk()
 		images="test-images.tar.gz debug-image.tar.gz"
 		download_urls=($download_url)
 		# for now, auto-download is enabled only if users provide one URL and filename contains OpenJ9-JDK
-		if [[ "${#download_urls[@]}" == 1 ]]; then
+		if [ "${#download_urls[@]}" = 1 ]; then
 			download_filename=${download_url##*/}
 			if [[ "$download_filename" =~ "OpenJ9-JDK" ]]; then
 				link=${download_url%$download_filename}
@@ -202,14 +207,14 @@ getBinaryOpenjdk()
 				do
 					required=true
 					checkURL "$image"
-					if [[ $required != false ]]; then
+					if [ $required != false ]; then
 						download_url+=" ${link}${image}"
 						echo "auto download: ${link}${image}"
 					fi
 				done
 			fi
 		fi
-	elif [ "$SDK_RESOURCE" == "nightly" ] || [ "$SDK_RESOURCE" == "releases" ]; then
+	elif [ "$SDK_RESOURCE" = "nightly" ] || [ "$SDK_RESOURCE" = "releases" ]; then
 		os=${PLATFORM#*_}
 		os=${os%_xl}
 		arch=${PLATFORM%%_*}
@@ -224,23 +229,27 @@ getBinaryOpenjdk()
 			arch="x32"
 		fi
 		release_type="ea"
-		if [ "$SDK_RESOURCE" == "releases" ]; then
+		if [ "$SDK_RESOURCE" = "releases" ]; then
 			release_type="ga"
 		fi
-		download_url="https://api.adoptium.net/v3/binary/latest/${JDK_VERSION}/${release_type}/${os}/${arch}/jdk/${JDK_IMPL}/${heap_size}/adoptium?project=jdk"
-info_url="https://api.adoptium.net/v3/assets/feature_releases/${JDK_VERSION}/${release_type}?architecture=${arch}&heap_size=${heap_size}&image_type=jdk&jvm_impl=${JDK_IMPL}&os=${os}&project=jdk&vendor=eclipse"
 
-if [ "$JDK_VERSION" != "8" ] && [ "$JDK_IMPL" != "openj9" ]; then
-    download_url+=" https://api.adoptium.net/v3/binary/latest/${JDK_VERSION}/${release_type}/${os}/${arch}/testimage/${JDK_IMPL}/${heap_size}/adoptium?project=jdk"
-    info_url+=" https://api.adoptium.net/v3/binary/latest/${JDK_VERSION}/${release_type}/${os}/${arch}/testimage/${JDK_IMPL}/${heap_size}/adoptium?project=jdk"
-fi
+		if [ "$JDK_IMPL" == "openj9" ]; then
+			if [ "$SDK_RESOURCE" = "nightly" ]; then
+				echo "Semeru API does not provide openj9 SDK nightly at the moment. Please use CUSTOMIZED_SDK_URL to provide the SDK URL directly."
+				exit 1
+			else
+				download_url="https://ibm.com/semeru-runtimes/api/v3/binary/latest/${JDK_VERSION}/${release_type}/${os}/${arch}/jdk/openj9/${heap_size}/ibm https://ibm.com/semeru-runtimes/api/v3/binary/latest/${JDK_VERSION}/${release_type}/${os}/${arch}/testimage/openj9/${heap_size}/ibm"
+				info_url="https://ibm.com/semeru-runtimes/api/v3/assets/feature_releases/${JDK_VERSION}/${release_type}?architecture=${arch}&heap_size=${heap_size}&image_type=jdk&jvm_impl=openj9&os=${os}&project=jdk&vendor=ibm https://ibm.com/semeru-runtimes/api/v3/assets/feature_releases/${JDK_VERSION}/${release_type}?architecture=${arch}&heap_size=${heap_size}&image_type=testimage&jvm_impl=openj9&os=${os}&project=jdk&vendor=ibm"
+			fi
+		else
+			download_url="https://api.adoptium.net/v3/binary/latest/${JDK_VERSION}/${release_type}/${os}/${arch}/jdk/${JDK_IMPL}/${heap_size}/adoptium?project=jdk"
+			info_url="https://api.adoptium.net/v3/assets/feature_releases/${JDK_VERSION}/${release_type}?architecture=${arch}&heap_size=${heap_size}&image_type=jdk&jvm_impl=${JDK_IMPL}&os=${os}&project=jdk&vendor=eclipse"
 
-if [ "$JDK_IMPL" == "openj9" ]; then
-download_url="https://api.adoptopenjdk.net/v3/binary/latest/${JDK_VERSION}/${release_type}/${os}/${arch}/jdk/openj9/${heap_size}/adoptopenjdk https://api.adoptopenjdk.net/v3/binary/latest/${JDK_VERSION}/${release_type}/${os}/${arch}/testimage/openj9/${heap_size}/adoptopenjdk"
-info_url="https://api.adoptopenjdk.net/v3/assets/feature_releases/${JDK_VERSION}/${release_type}?architecture=${arch}&heap_size=${heap_size}&image_type=jdk&jvm_impl=openj9&os=${os}&project=jdk&vendor=adoptopenjdk https://api.adoptopenjdk.net/v3/assets/feature_releases/${JDK_VERSION}/${release_type}?architecture=${arch}&heap_size=${heap_size}&image_type=testimage&jvm_impl=openj9&os=${os}&project=jdk&vendor=adoptopenjdk"
-fi
-
-
+			if [ "$JDK_VERSION" != "8" ]; then
+				download_url+=" https://api.adoptium.net/v3/binary/latest/${JDK_VERSION}/${release_type}/${os}/${arch}/testimage/${JDK_IMPL}/${heap_size}/adoptium?project=jdk"
+				info_url+=" https://api.adoptium.net/v3/binary/latest/${JDK_VERSION}/${release_type}/${os}/${arch}/testimage/${JDK_IMPL}/${heap_size}/adoptium?project=jdk"
+			fi
+		fi
 	else
 		download_url=""
 		echo "--sdkdir is set to $SDK_RESOURCE. Therefore, skip download jdk binary"
@@ -249,58 +258,34 @@ fi
 	if [ "${download_url}" != "" ]; then
 		for file in $download_url
 		do
-			set +e
-			count=0
-			download_exit_code=-1
-			# when the command is not found (code 127), do not retry
-			while [ $download_exit_code != 0 ] && [ $download_exit_code != 127 ] && [ $count -le 5  ]
-			do
-				if [ $count -gt 0 ]; then
-					sleep_time=300
-					echo "curl error code: $download_exit_code. Sleep $sleep_time secs, then retry $count..."
-					sleep $sleep_time
-
-					download_filename=${file##*/}
-					echo "check for $download_filename. If found, the file will be removed."
-					if [ -f "$download_filename" ]; then
-						echo "remove $download_filename before retry..."
-						rm $download_filename
-					fi
-				fi
-
-				echo "_ENCODE_FILE_NEW=UNTAGGED curl -OLJSk${CURL_OPTS} ${curl_options} $file"
-				_ENCODE_FILE_NEW=UNTAGGED curl -OLJSk${CURL_OPTS} ${curl_options} $file
-				download_exit_code=$?
-				count=$(( $count + 1 ))
-			done
-
-			if [ $download_exit_code != 0 ]; then
-				echo "curl error code: $download_exit_code"
-				echo "Failed to retrieve $file, exiting. This is what we received of the file and MD5 sum:"
+			executeCmdWithRetry "${file##*/}" "_ENCODE_FILE_NEW=UNTAGGED curl -OLJSk${CURL_OPTS} ${curl_options} $file"
+			rt_code=$?
+			if [ $rt_code != 0 ]; then
+				echo "curl error code: $rt_code"
+				echo "Failed to retrieve $file. This is what we received of the file and MD5 sum:"
 				ls -ld $file
 
 				if [[ "$OSTYPE" == "darwin"* ]]; then
-				    md5 $file
-				 else
-				    md5sum $file
+					md5 $file
+				else
+					md5sum $file
 				fi
 
 				exit 1
 			fi
-			set -e
 		done
 	fi
 
 	# use openapi, try to get the information of the download file
 	# if it returns the status code other than 200, it means the parameters provided by user forms some invalid link, then fails early
-	if [[ -n $info_url ]]; then
+	if [ -n "$info_url" ]; then
 		for info in $info_url
 		do
 			if [[ $info == https://api.adoptopenjdk.net* ]]; then
 				http_resp_info=$(curl -Is "$info" | grep "HTTP/" | tail -1)
 				# 2nd field of HTTP status line is the http response code (both HTTP/1.1 & 2)
 				validate=$(echo "${http_resp_info}" | tr -s ' ' | cut -d' ' -f2)
-				if [[ ${validate} != 200 ]]; then
+				if [ "$validate" != 200 ]; then
 					echo "Download failure, invalid download link: ${info}."
 					exit 1
 				fi
@@ -310,39 +295,51 @@ fi
 
 	jar_files=`ls`
 	jar_file_array=(${jar_files//\\n/ })
+	last_index=$(( ${#jar_file_array[@]} - 1 ))
+
+	if [[ $last_index == 0 ]]; then
+		if [[ $download_url =~ '*.tar.gz' ]] || [[ $download_url =~ '*.zip' ]]; then
+			nested_zip="${jar_file_array[0]}"
+			echo "${nested_zip} is a nested zip"
+			unzip -q $nested_zip -d .
+			rm $nested_zip
+			jar_files=`ls *jdk*.tar.gz *jre*.tar.gz *testimage*.tar.gz *debugimage*.tar.gz *jdk*.zip *jre*.zip *testimage*.zip *debugimage*.zip 2> /dev/null || true`
+			echo "Found files under ${nested_zip}:"
+			echo "${jar_files}"
+			jar_file_array=(${jar_files//\\n/ })
+			last_index=$(( ${#jar_file_array[@]} - 1 ))
+		fi
+	fi
 
 	# if $jar_file_array contains debug-image, move debug-image element to the end of the array
 	# debug image jar needs to be extracted after jdk as debug image jar extraction location depends on jdk structure
 	# debug image jar extracts into j2sdk-image/jre dir if it exists. Otherwise, extracts into j2sdk-image dir
-	if [[ $DEBUG_IMAGES_REQUIRED = true ]]; then
-		last_index=$(( ${#jar_file_array[@]} -1 ))
-		for i in "${!jar_file_array[@]}"; do
-			if [[ "${jar_file_array[$i]}" =~ "debug-image" || "${jar_file_array[$i]}" =~ "debugimage" ]]; then
-				if [[ $i -ne $last_index ]]; then
-					debug_image_jar="${jar_file_array[$i]}"
+	for i in "${!jar_file_array[@]}"; do
+		if [[ "${jar_file_array[$i]}" =~ "debug-image" ]] || [[ "${jar_file_array[$i]}" =~ "debugimage" ]]; then
+			if [ "$i" -ne "$last_index" ]; then
+				debug_image_jar="${jar_file_array[$i]}"
 
-					#remove the element
-					unset jar_file_array[$i]
+				# remove the element
+				unset jar_file_array[$i]
 
-					# add $debug_image_jar to the end of the array
-					jar_file_array=( "${jar_file_array[@]}" "${debug_image_jar}" )
-					break
-				fi
+				# add $debug_image_jar to the end of the array
+				jar_file_array=( "${jar_file_array[@]}" "${debug_image_jar}" )
+				break
 			fi
-		done
-	fi
+		fi
+	done
 
 	for jar_name in "${jar_file_array[@]}"
 		do
 			# if jar_name contains debug-image, extract into j2sdk-image/jre or j2sdk-image dir
 			# Otherwise, files will be extracted under ./tmp
-			if [[ "$jar_name"  =~ "debug-image" || "$jar_name"  =~ "debugimage" ]]; then
+			if [[ "$jar_name" =~ "debug-image" ]] || [[ "$jar_name" =~ "debugimage" ]]; then
 				extract_dir="./j2sdk-image"
 				if [ -d "$SDKDIR/openjdkbinary/j2sdk-image/jre" ]; then
 					extract_dir="./j2sdk-image/jre"
 				fi
 				echo "Uncompressing $jar_name over $extract_dir..."
-				if [[ $jar_name == *zip || $jar_name == *jar ]]; then
+				if [[ $jar_name == *zip ]] || [[ $jar_name == *jar ]]; then
 					unzip -q $jar_name -d $extract_dir
 				else
 					# some debug-image tar has parent folder ... strip it
@@ -359,7 +356,7 @@ fi
 					mkdir $SDKDIR/openjdkbinary/tmp
 				fi
 				echo "Uncompressing file: $jar_name ..."
-				if [[ $jar_name == *zip || $jar_name == *jar ]]; then
+				if [[ $jar_name == *zip ]] || [[ $jar_name == *jar ]]; then
 					unzip -q $jar_name -d ./tmp
 				elif [[ $jar_name == *.pax* ]]; then
 					cd ./tmp
@@ -372,36 +369,36 @@ fi
 				jar_dirs=`ls -d */`
 				jar_dir_array=(${jar_dirs//\\n/ })
 				len=${#jar_dir_array[@]}
-				if [[ "$len" == 1 ]]; then
+				if [ "$len" == 1 ]; then
 					jar_dir_name=${jar_dir_array[0]}
-					if [[ "$jar_dir_name" =~ "test-image" && "$jar_dir_name" != "openjdk-test-image" ]]; then
+					if [[ "$jar_dir_name" =~ "test-image" ]] && [ "$jar_dir_name" != "openjdk-test-image" ]; then
 						mv $jar_dir_name ../openjdk-test-image
-					elif [[ "$jar_dir_name" =~ jre*  &&  "$jar_dir_name" != "j2re-image" ]]; then
+					elif [[ "$jar_dir_name" =~ jre* ]] && [ "$jar_dir_name" != "j2re-image" ]; then
 						mv $jar_dir_name ../j2re-image
-					elif [[ "$jar_dir_name" =~ jdk*  &&  "$jar_dir_name" != "j2sdk-image" ]]; then
+					elif [[ "$jar_dir_name" =~ jdk* ]] && [ "$jar_dir_name" != "j2sdk-image" ]; then
 						mv $jar_dir_name ../j2sdk-image
-					#The following only needed if openj9 has a different image name convention
-					elif [[ "$jar_dir_name" != "j2sdk-image" ]]; then
+					# The following only needed if openj9 has a different image name convention
+					elif [ "$jar_dir_name" != "j2sdk-image" ]; then
 						mv $jar_dir_name ../j2sdk-image
 					fi
-				elif [[ "$len" > 1 ]]; then
+				elif [ "$len" -gt 1 ]; then
 					mv ../tmp ../j2sdk-image
 				fi
 				cd $SDKDIR/openjdkbinary
 			fi
 		done
 
-	if [[ "$PLATFORM" == "s390x_zos" ]]; then
+	if [ "$PLATFORM" = "s390x_zos" ]; then
 		chmod -R 755 j2sdk-image
 	fi
 }
 
 checkURL() {
 	local filename="$1"
-	if [[ $filename =~ "test-image" && $TEST_IMAGES_REQUIRED = false ]]; then
-		required=false
-	elif [[ $filename =~ "debug-image" && $DEBUG_IMAGES_REQUIRED = false ]]; then
-		required=false
+	if [[ $filename =~ "test-image" ]]; then
+		required=$TEST_IMAGES_REQUIRED
+	elif [[ $filename =~ "debug-image" ]] || [[ "$jar_name" =~ "debugimage" ]]; then
+		required=$DEBUG_IMAGES_REQUIRED
 	fi
 }
 
@@ -413,7 +410,7 @@ getOpenJDKSources() {
 	echo "_ENCODE_FILE_NEW=UNTAGGED curl -OLJks --retry 5 --retry-delay 300 ${curl_options} $CUSTOMIZED_SDK_SOURCE_URL"
 	_ENCODE_FILE_NEW=UNTAGGED curl -OLJks --retry 5 --retry-delay 300 ${curl_options} $CUSTOMIZED_SDK_SOURCE_URL
 	sources_file=`ls`
-	if [[ $sources_file == *zip || $sources_file == *jar ]]; then
+	if [[ "$sources_file" == *zip ]] || [[ "$sources_file" == *jar ]]; then
 		unzip -q $sources_file -d .
 	else
 		gzip -cd $sources_file | tar xof -
@@ -429,12 +426,17 @@ getTestKitGen()
 {
 	echo "get testKitGen..."
 	cd $TESTDIR
-	if [ "$TKG_REPO" == "" ]
-	then
+	if [ "$TKG_REPO" = "" ]; then
 		TKG_REPO="https://github.com/adoptium/TKG.git"
 	fi
-	echo "git clone -q $TKG_REPO"
-	git clone -q $TKG_REPO
+
+	executeCmdWithRetry "TKG" "git clone -q $TKG_REPO"
+	rt_code=$?
+	if [ $rt_code != 0 ]; then
+		echo "git clone error code: $rt_code"
+		exit 1
+	fi
+
 	cd TKG
 	echo "git rev-parse $TKG_BRANCH"
 	if ! tkg_sha=(`git rev-parse $TKG_BRANCH`); then
@@ -457,7 +459,34 @@ getCustomJtreg()
 	fi
 	echo "_ENCODE_FILE_NEW=UNTAGGED curl -LJks -o custom_jtreg.tar.gz --retry 5 --retry-delay 300 ${curl_options} $JTREG_URL"
 	_ENCODE_FILE_NEW=UNTAGGED curl -LJks -o custom_jtreg.tar.gz --retry 5 --retry-delay 300 ${curl_options} $JTREG_URL
+}
 
+executeCmdWithRetry()
+{
+	set +e
+	count=0
+	rt_code=-1
+	# when the command is not found (code 127), do not retry
+	while [ "$rt_code" != 0 ] && [ "$rt_code" != 127 ] && [ "$count" -le 5 ]
+	do
+		if [ "$count" -gt 0 ]; then
+			sleep_time=300
+			echo "error code: $rt_code. Sleep $sleep_time secs, then retry $count..."
+			sleep $sleep_time
+
+			echo "check for $1. If found, the file will be removed."
+			if [ -f "$1" ]; then
+				echo "remove $1 before retry..."
+				rm $1
+			fi
+		fi
+		echo "$2"
+		eval "$2"
+		rt_code=$?
+		count=$(( $count + 1 ))
+	done
+	return "$rt_code"
+	set -e
 }
 
 getFunctionalTestMaterial()
@@ -470,8 +499,12 @@ getFunctionalTestMaterial()
 		OPENJ9_BRANCH="-b $OPENJ9_BRANCH"
 	fi
 
-	echo "git clone --depth 1 $OPENJ9_BRANCH $OPENJ9_REPO"
-	git clone --depth 1 -q $OPENJ9_BRANCH $OPENJ9_REPO
+	executeCmdWithRetry "openj9" "git clone --depth 1 --reference-if-able ${HOME}/openjdk_cache $OPENJ9_BRANCH $OPENJ9_REPO"
+	rt_code=$?
+	if [ $rt_code != 0 ]; then
+		echo "git clone error code: $rt_code"
+		exit 1
+	fi
 
 	if [ "$OPENJ9_SHA" != "" ]
 	then
@@ -484,10 +517,18 @@ getFunctionalTestMaterial()
 			echo "git fetch -q --tags $OPENJ9_REPO +refs/pull/*:refs/remotes/origin/pr/*"
 			git fetch -q --tags $OPENJ9_REPO +refs/pull/*:refs/remotes/origin/pr/*
 			echo "git checkout -q $OPENJ9_SHA"
-			git checkout -q $OPENJ9_SHA
+			if ! git checkout $OPENJ9_SHA; then
+				echo "SHA not yet found. Continue fetching all the branches on origin..."
+				echo "git fetch -q --tags $OPENJ9_REPO +refs/heads/*:refs/remotes/origin/*"
+				git fetch -q --tags $OPENJ9_REPO +refs/heads/*:refs/remotes/origin/*
+				echo "git checkout -q $OPENJ9_SHA"
+				git checkout $OPENJ9_SHA
+			fi
 		fi
 		cd $TESTDIR
 	fi
+
+	checkOpenJ9RepoSHA
 
 	mv openj9/test/TestConfig TestConfig
 	mv openj9/test/Utils Utils
@@ -496,7 +537,6 @@ getFunctionalTestMaterial()
 	else
 		mv openj9/test/functional functional
 	fi
-	checkOpenJ9RepoSHA
 
 	rm -rf openj9
 
@@ -550,7 +590,7 @@ getFunctionalTestMaterial()
 			fi
 
 			# move resources
-			if [[ "$dir" != "" ]] && [[ -d $dest/$dir ]]; then
+			if [ "$dir" != "" ] && [ -d $dest/$dir ]; then
 				echo "Stage $dest/$dir to $TESTDIR/$dir"
 				# already in TESTDIR, thus copy $dir to current directory
 				cp -r $dest/$dir ./
@@ -571,55 +611,70 @@ getFunctionalTestMaterial()
 
 testJavaVersion()
 {
-# use environment variable TEST_JDK_HOME to run java -version
-if [[ $TEST_JDK_HOME == "" ]]; then
-	TEST_JDK_HOME=$SDKDIR/openjdkbinary/j2sdk-image
-fi
-_java=${TEST_JDK_HOME}/bin/java
-_release=${TEST_JDK_HOME}/release
-if [ -x ${_java} ]; then
-	echo "Run ${_java} -version"
-	echo "=JAVA VERSION OUTPUT BEGIN="
-	${_java} -version
-	echo "=JAVA VERSION OUTPUT END="
-	if [ -e ${_release} ]; then
-		echo "=RELEASE INFO BEGIN="
-		cat ${_release}
-		echo "=RELEASE INFO END="
+	# use environment variable TEST_JDK_HOME to run java -version
+	if [ "$TEST_JDK_HOME" = "" ]; then
+		TEST_JDK_HOME=$SDKDIR/openjdkbinary/j2sdk-image
 	fi
-else
-	echo "${TEST_JDK_HOME}/bin/java does not exist! Searching under TEST_JDK_HOME: ${TEST_JDK_HOME}..."
-	# Search javac as java may not be unique
-	javac_path=`find ${TEST_JDK_HOME} \( -path "*/bin/javac" -o -path "*/bin/javac.exe" \)`
-	if [[ $javac_path != "" ]]; then
-		echo "javac_path: ${javac_path}"
-		javac_path_array=(${javac_path//\\n/ })
-		_javac=${javac_path_array[0]}
-
-		# for windows, replace \ to /. Otherwise, readProperties() in Jenkins script cannot read \
-		if [[ "${_javac}" =~ "javac.exe" ]]; then
-			_javac="${_javac//\\//}"
-		fi
-
-		java_dir=$(dirname "${_javac}")
-		echo "Run: ${java_dir}/java -version"
+	_java=${TEST_JDK_HOME}/bin/java
+	_release=${TEST_JDK_HOME}/release
+	# Code_Coverage use different _java through searching javac for now, following path will be modified after refining files from BUILD
+	if [[ "$CODE_COVERAGE" == "true" ]]; then
+		_java=${TEST_JDK_HOME}/build/bin/java
+		_release=${TEST_JDK_HOME}/build/release
+	fi
+	if [ -x ${_java} ]; then
+		echo "Run ${_java} -version"
 		echo "=JAVA VERSION OUTPUT BEGIN="
-		${java_dir}/java -version
+		${_java} -version
 		echo "=JAVA VERSION OUTPUT END="
-		TEST_JDK_HOME=${java_dir}/../
-		echo "TEST_JDK_HOME=${TEST_JDK_HOME}" > ${TESTDIR}/job.properties
+		if [ -e ${_release} ]; then
+			echo "=RELEASE INFO BEGIN="
+			cat ${_release}
+			echo "=RELEASE INFO END="
+		fi
 	else
-		echo "Cannot find javac under TEST_JDK_HOME: ${TEST_JDK_HOME}!"
-		exit 1
+		# Search javac as java may not be unique
+		if [[ "$CODE_COVERAGE" == "true" ]]; then
+			echo "${TEST_JDK_HOME}/build/bin/java does not exist! Searching under TEST_JDK_HOME: ${TEST_JDK_HOME}..."
+			javac_path=`find ${TEST_JDK_HOME} \( -path "*/images/jdk/bin/javac" -o -path "*/images/jdk/bin/javac.exe" \)`
+		else
+			echo "${TEST_JDK_HOME}/bin/java does not exist! Searching under TEST_JDK_HOME: ${TEST_JDK_HOME}..."
+			javac_path=`find ${TEST_JDK_HOME} \( -path "*/bin/javac" -o -path "*/bin/javac.exe" \)`
+		fi
+		if [ "$javac_path" != "" ]; then
+			echo "javac_path: ${javac_path}"
+			javac_path_array=(${javac_path//\\n/ })
+			_javac=${javac_path_array[0]}
+
+			# for windows, replace \ to /, otherwise, readProperties() in Jenkins script cannot read \
+			if [[ "${_javac}" =~ "javac.exe" ]]; then
+				_javac="${_javac//\\//}"
+			fi
+
+			java_dir=$(dirname "${_javac}")
+			echo "Run: ${java_dir}/java -version"
+			echo "=JAVA VERSION OUTPUT BEGIN="
+			${java_dir}/java -version
+			echo "=JAVA VERSION OUTPUT END="
+			TEST_JDK_HOME=${java_dir}/../
+			echo "TEST_JDK_HOME=${TEST_JDK_HOME}" > ${TESTDIR}/job.properties
+		else
+			echo "Cannot find javac under TEST_JDK_HOME: ${TEST_JDK_HOME}!"
+			exit 1
+		fi
 	fi
-fi
 }
 
 checkRepoSHA()
 {
-	output_file="$TESTDIR/TKG/SHA.txt"
-	echo "$TESTDIR/TKG/scripts/getSHA.sh --repo_dir $1 --output_file $output_file"
-	$TESTDIR/TKG/scripts/getSHA.sh --repo_dir $1 --output_file $output_file
+	sha_file="$TESTDIR/TKG/SHA.txt"
+	testenv_file="$TESTDIR/testenv/testenv.properties"
+
+	echo "$TESTDIR/TKG/scripts/getSHA.sh --repo_dir $1 --output_file $sha_file"
+	$TESTDIR/TKG/scripts/getSHA.sh --repo_dir $1 --output_file $sha_file
+
+	echo "$TESTDIR/TKG/scripts/getTestenvProperties.sh --repo_dir $1 --output_file $testenv_file --repo_name $2"
+	$TESTDIR/TKG/scripts/getTestenvProperties.sh --repo_dir $1 --output_file $testenv_file --repo_name $2
 }
 
 checkTestRepoSHAs()
@@ -632,26 +687,36 @@ checkTestRepoSHAs()
 		rm ${output_file}
 	fi
 
-	checkRepoSHA "$TESTDIR"
-	checkRepoSHA "$TESTDIR/TKG"
+	checkRepoSHA "$TESTDIR" "ADOPTOPENJDK"
+	checkRepoSHA "$TESTDIR/TKG" "TKG"
 }
 
 checkOpenJ9RepoSHA()
 {
 	echo "check OpenJ9 Repo sha"
-	checkRepoSHA "$TESTDIR/openj9"
+	checkRepoSHA "$TESTDIR/openj9" "OPENJ9"
 }
 
-
 parseCommandLineArgs "$@"
-if [[ "$USE_TESTENV_PROPERTIES" == true  ]]; then
-	source ./testenv/testenv.properties
+if [ "$USE_TESTENV_PROPERTIES" = true ]; then
+	if [[ "$PLATFORM" == *"zos"* ]]; then
+		echo "load ./testenv/testenv_zos.properties"
+		source ./testenv/testenv_zos.properties
+	elif [[ "$PLATFORM" == *"arm"* ]] && [[ "$JDK_VERSION" == "8" ]] ; then
+		echo "load ./testenv/testenv_arm32.properties"
+		source ./testenv/testenv_arm32.properties
+	else
+		echo "load ./testenv/testenv.properties"
+		source ./testenv/testenv.properties
+	fi
+else
+	> ./testenv/testenv.properties
 fi
-
-if [[ "$SDKDIR" != "" ]]; then
+if [ "$SDKDIR" != "" ]; then
 	getBinaryOpenjdk
 	testJavaVersion
 fi
+
 if [ "$SDK_RESOURCE" == "customized" ] && [ "$CUSTOMIZED_SDK_SOURCE_URL" != "" ]; then
 	getOpenJDKSources
 fi
@@ -660,7 +725,7 @@ if [ ! -d "$TESTDIR/TKG" ]; then
 	getTestKitGen
 fi
 
-if [[ $JTREG_URL != "" ]]; then
+if [ "$JTREG_URL" != "" ]; then
 	getCustomJtreg
 fi
 

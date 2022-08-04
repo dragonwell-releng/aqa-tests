@@ -25,9 +25,17 @@ my @list=(
 
 $OS=$^O; #OS name
 chomp($OS);
-$SYSENC=`locale charmap`;
+undef $ENV{'LC_ALL'};
+$SYSENC=`locale charmap 2>&1`;
+$lang = $ENV{'LANG'};
+if (index($SYSENC," ") > -1) {
+    for($i = 0; $i < 4; $i+=1) {
+        ok(1 == 1,"skip");
+    }
+    print "SKIPPED! $lang is not supported.\n";
+    exit(0);
+}
 chomp($SYSENC);
-$lang = $ENV{LANG};
 $lang =~ s/\..*$//;
 $FULLLANG = $OS."_".$lang.".".$SYSENC;
 undef %LOC;
@@ -36,6 +44,7 @@ foreach $l (
     "aix_ko_KR.IBM-eucKR","aix_KO_KR.UTF-8",
     "aix_zh_CN.IBM-eucCN","aix_Zh_CN.GB18030","aix_ZH_CN.UTF-8",
     "aix_zh_TW.IBM-eucTW","aix_Zh_TW.big5","aix_ZH_TW.UTF-8",
+    "darwin_ja_JP.UTF-8","darwin_ko_KR.UTF-8","darwin_zh_CN.UTF-8","darwin_zh_TW.UTF-8",
     "linux_ja_JP.UTF-8","linux_ko_KR.UTF-8","linux_zh_CN.UTF-8","linux_zh_TW.UTF-8")
 {
     $LOC{$l} = "";
