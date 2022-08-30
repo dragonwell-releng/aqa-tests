@@ -556,6 +556,18 @@ def buildTest() {
 				//get pre-staged jars from test.getDependency build before test compilation
 				timeout(time: 2, unit: 'HOURS') {
 					copyArtifacts fingerprintArtifacts: true, projectName: "test.getDependency", selector: lastSuccessful(), target: 'aqa-tests/TKG/lib'
+                                }
+                                // ajdk download dep from github always fail
+                                def depsFromTKGLib = ["renaissance.jar"]
+                                def targetPath = ["${env.WORKSPACE}/aqa-tests/perf/renaissance/"]
+                                if (depsFromTKGLib.size() > 0) {
+                                    def endIdx = depsFromTKGLib.size() - 1
+                                    for (idx in 0..endIdx) {
+                                        if (depsFromTKGLib[idx]) {
+                                            println "copy ./aqa-tests/TKG/lib/${depsFromTKGLib[idx]} to ${targetPath[idx]}"
+                                            sh "cp ./aqa-tests/TKG/lib/${depsFromTKGLib[idx]} ${targetPath[idx]}"
+                                        }
+                                    }
 				}
 			} catch (Exception e) {
 				echo 'Cannot run copyArtifacts from test.getDependency. Skipping copyArtifacts...'
@@ -639,7 +651,6 @@ def runTest( ) {
 				}
 				else if (env.SPEC.contains('linux') && !(LABEL.contains('ci.agent.dynamic') && CLOUD_PROVIDER == 'azure') && !(env.SPEC.contains("aarch64"))) {
 					// Add an additional 10 second timeout due to issue: https://github.com/adoptium/temurin-build/issues/2368#issuecomment-756683888
-                  println "xxxx"
 					wrap([$class: 'Xvfb', autoDisplayName: true, timeout:10]) {
 						def DISPLAY = sh (
 								script: 'ps -f  | grep \'[X]vfb\' | awk \'{print \$9}\'',
