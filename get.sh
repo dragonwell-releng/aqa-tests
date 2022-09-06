@@ -470,7 +470,7 @@ executeCmdWithRetry()
 	while [ "$rt_code" != 0 ] && [ "$rt_code" != 127 ] && [ "$count" -le 5 ]
 	do
 		if [ "$count" -gt 0 ]; then
-			sleep_time=300
+			sleep_time=30
 			echo "error code: $rt_code. Sleep $sleep_time secs, then retry $count..."
 			sleep $sleep_time
 
