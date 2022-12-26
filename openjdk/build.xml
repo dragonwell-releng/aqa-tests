@@ -32,7 +32,15 @@
 			<matches pattern="^[1][0123456]" string="${JDK_VERSION}"/>
 		</or>
 		<then>
-			<property name="jtregTar" value="jtreg_5_1_b01"/>
+                  <if>
+                    <equals arg1="${SPEC}" arg2="linux_riscv64" />
+                    <then>
+			<property name="jtregTar" value="jtreg_6_1"/>
+                    </then>
+                    <else>
+                        <property name="jtregTar" value="jtreg_5_1_b01"/>
+                    </else>
+                  </if>
 		</then>
 		<else>
 			<if> 

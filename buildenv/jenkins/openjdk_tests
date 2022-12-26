@@ -312,6 +312,11 @@ def runTest() {
             docker.image('adoptopenjdk/centos6_build_image').inside {
                 jenkinsfile.testBuild()
             }
+        } else if (LABEL.contains('hw.arch.riscv')) {
+            docker.image('alibabadragonwelljdk/riscv-normal-qemu_6.0.0-rvv-1.0:latest').pull()
+            docker.image('alibabadragonwelljdk/riscv-normal-qemu_6.0.0-rvv-1.0:latest').inside {
+              jenkinsfile.testBuild()
+            }
         } else {
             jenkinsfile.testBuild()
         }
