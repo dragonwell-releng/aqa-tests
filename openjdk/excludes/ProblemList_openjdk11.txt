@@ -33,6 +33,8 @@ java/beans/Beans/TypoInBeanDescription.java https://github.com/adoptium/aqa-test
 # jdk_compiler
 
 compiler/gcbarriers/UnsafeIntrinsicsTest.java#shenandoah https://github.com/adoptium/aqa-tests/issues/2640 linux-aarch64
+compiler/aot/fingerprint/SelfChangedCDS.java https://github.com/adoptium/aqa-tests/issues/2640 windows-x86
+
 compiler/aot/verification/vmflags/TrackedFlagTest.java 8215224 generic-all
 compiler/aot/verification/vmflags/NotTrackedFlagTest.java 8215224 generic-all
 ############################################################################
