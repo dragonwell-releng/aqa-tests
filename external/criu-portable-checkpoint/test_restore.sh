@@ -14,8 +14,13 @@
 
 source $(dirname "$0")/test_base_functions.sh
 # This script is used as the new entrypoint for saved criu-restore-ready-with-jdk docker image
-set -e
 echo "Restore tests from Checkpoint"
+
+echo "export GLIBC_TUNABLES=glibc.pthread.rseq=0:glibc.cpu.hwcaps=-XSAVEC,-XSAVE,-AVX2,-ERMS,-AVX,-AVX_Fast_Unaligned_Load";
+export GLIBC_TUNABLES=glibc.pthread.rseq=0:glibc.cpu.hwcaps=-XSAVEC,-XSAVE,-AVX2,-ERMS,-AVX,-AVX_Fast_Unaligned_Load
+echo "export LD_BIND_NOT=on";
+export LD_BIND_NOT=on
+
 checkpoint_folders="/aqa-tests/TKG/output_*/cmdLineTester_criu_keepCheckpoint*"
 output_file="testOutput" # File "testOutput" is used to store all outputs
 result_code=0
@@ -31,9 +36,8 @@ do
     else
         echo "Test $cur_test_name failed"
         cat $output_file
-        $result_code=1
+        result_code=1
     fi
 done
 
 exit $result_code
-set +e

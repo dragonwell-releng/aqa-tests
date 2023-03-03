@@ -156,6 +156,7 @@ java/net/ipv6tests/UdpTest.java https://bugs.openjdk.java.net/browse/JDK-8198266
 java/nio/file/Files/probeContentType/Basic.java https://github.com/adoptium/aqa-tests/issues/2789 aix-ppc64,windows-all
 java/nio/channels/DatagramChannel/SendReceiveMaxSize.java https://github.com/adoptium/aqa-tests/issues/3820 aix-all
 java/net/DatagramSocket/SendReceiveMaxSize.java https://github.com/adoptium/aqa-tests/issues/3820 aix-all
+sun/net/www/http/KeepAliveCache/KeepAliveProperty.java https://bugs.openjdk.org/browse/JDK-8285836 linux-ppc64le
 ############################################################################
 
 # jdk_io
@@ -297,6 +298,11 @@ java/util/BitSet/HugeToString.java https://github.com/adoptium/aqa-tests/issues/
 ############################################################################
 
 # jdk_foreign
+java/foreign/valist/VaListTest.java https://bugs.openjdk.org/browse/JDK-8295290   windows-aarch64
+java/foreign/malloc/TestMixedMallocFree.java https://bugs.openjdk.org/browse/JDK-8295290   windows-aarch64
+java/foreign/TestNative.java https://bugs.openjdk.org/browse/JDK-8295290   windows-aarch64
+java/foreign/TestVarArgs.java https://bugs.openjdk.org/browse/JDK-8295290   windows-aarch64
+java/foreign/StdLibTest.java https://bugs.openjdk.org/browse/JDK-8295290   windows-aarch64
 java/foreign/TestArrays.java	https://github.com/adoptium/aqa-tests/issues/1701 generic-all
 java/foreign/TestLayouts.java	https://github.com/adoptium/aqa-tests/issues/1701 generic-all
 java/foreign/TestLayoutPaths.java	https://github.com/adoptium/aqa-tests/issues/1701	generic-all
@@ -475,6 +481,11 @@ compiler/c2/TestShiftRightAndAccumulate.java https://github.com/adoptium/aqa-tes
 compiler/codegen/TestCharVect2.java https://github.com/adoptium/aqa-tests/issues/2382 windows-x86
 compiler/loopopts/superword/Vec_MulAddS2I.java https://github.com/adoptium/aqa-tests/issues/2382 windows-x86
 compiler/loopopts/TestUnswitchCloneSkeletonPredicates.java https://github.com/adoptium/aqa-tests/issues/2382 windows-x86
+compiler/intrinsics/unsafe/HeapByteBufferTest.java#id1 https://github.com/adoptium/aqa-tests/issues/2382 windows-x86
+compiler/loopopts/superword/TestPeeledReductionNode.java https://github.com/adoptium/aqa-tests/issues/2382 windows-x86
+compiler/c2/ClearArray.java https://github.com/adoptium/aqa-tests/issues/2382 windows-x86
+compiler/rangechecks/TestRangeCheckCmpUUnderflow.java https://github.com/adoptium/aqa-tests/issues/2382 windows-x86
+compiler/loopopts/TestOverUnrolling2.java https://github.com/adoptium/aqa-tests/issues/2382 windows-x86
 compiler/loopstripmining/AntiDependentLoadInOuterStripMinedLoop.java https://github.com/adoptium/aqa-tests/issues/2382 windows-x86
 compiler/loopstripmining/LoadDependsOnIfIdenticalToLoopExit.java https://github.com/adoptium/aqa-tests/issues/2382 windows-x86
 compiler/loopstripmining/TestConservativeAntiDep.java https://github.com/adoptium/aqa-tests/issues/2382 windows-x86
@@ -501,3 +512,8 @@ compiler/c2/irTests/TestSuperwordFailsUnrolling.java https://github.com/adoptium
 #runtime_nestmate
 
 runtime/Nestmates/protectionDomain/TestDifferentProtectionDomains.java https://bugs.openjdk.java.net/browse/JDK-8269135 windows-x86
+
+############################################################################
+
+# jdk_container/hotspot_container
+containers/docker/TestMemoryWithCgroupV1.java https://bugs.openjdk.org/browse/JDK-8297274 linux-all

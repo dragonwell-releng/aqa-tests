@@ -90,12 +90,12 @@ print_image_args() {
     fi
     if [[ "${vm}" == "openj9" ]]; then
         if  [[ "${os}" == "ubuntu" ]]; then
-            image_name="ibm-semeru-runtimes"
+            image_name="docker.io/ibm-semeru-runtimes"
             tag=open-${tag}
         else
             # os is ubi
             image_name="registry.access.redhat.com/ubi8/ubi"
-            tag="8.5"
+            tag="8.6"
         fi
     fi
     image="${image_name}:${tag}"
@@ -126,6 +126,7 @@ print_ubuntu_pkg() {
 
     echo -e "RUN apt-get update \\" \
             "\n\t&& apt-get install -qq -y --no-install-recommends software-properties-common \\" \
+            "\n\t&& apt-get install -qq -y --no-install-recommends gnupg \\" \
             "\n\t&& add-apt-repository ppa:ubuntu-toolchain-r/test \\" \
             "\n\t&& apt-get update \\" \
             "\n\t&& apt-get install -y --no-install-recommends ${packages} \\" \
@@ -352,12 +353,13 @@ print_criu_install() {
 
     if [[ "${os}" == *"ubi"* ]]; then
         if [[ "${platform}" == *"x86-64"* ]]; then
-            echo -e "\nRUN wget -O /usr/sbin/criu https://public.dhe.ibm.com/ibmdl/export/pub/software/openliberty/runtime/criu-build/b1/criu \\" \
-                    "\n\t&& wget -O /usr/lib64/libcriu.so.2.0 https://public.dhe.ibm.com/ibmdl/export/pub/software/openliberty/runtime/criu-build/b1/libcriu.so " \
+            echo -e "\nRUN wget -O /usr/sbin/criu https://public.dhe.ibm.com/ibmdl/export/pub/software/openliberty/runtime/criu-build/b6/criu \\" \
+                    "\n\t&& wget -O /usr/lib64/libcriu.so.2.0 https://public.dhe.ibm.com/ibmdl/export/pub/software/openliberty/runtime/criu-build/b6/libcriu.so.2.0 " \
                     "\n" >> ${file}
 
             echo -e "\nRUN chmod a+x /usr/sbin/criu \\" \
-                    "\n\t&& setcap cap_checkpoint_restore,cap_net_admin,cap_sys_ptrace=eip /usr/sbin/criu \\" \
+                    "\n\t&& setcap cap_checkpoint_restore,cap_sys_ptrace,cap_setpcap=eip /usr/sbin/criu \\" \
+                    "\n\t&& export GLIBC_TUNABLES=glibc.pthread.rseq=0:glibc.cpu.hwcaps=-XSAVEC,-XSAVE,-AVX2,-ERMS,-AVX,-AVX_Fast_Unaligned_Load \\" \
                     "\n\t&& cd /usr/lib64 \\" \
                     "\n\t&& ln -s libcriu.so.2.0 libcriu.so \\" \
                     "\n\t&& ln -s libcriu.so.2.0 libcriu.so.2 \\" \
@@ -367,21 +369,33 @@ print_criu_install() {
             exit 1
         fi
     else # for ubuntu
-        echo -e "ARG CRIU_VERSION=${criu_version}" \
-                "\nENV CRIU_VERSION=\$CRIU_VERSION" \
-                "\n\n# Install criu and set capabilities" \
-                "\nRUN wget --progress=dot:mega -O v\${CRIU_VERSION}.tar.gz https://github.com/checkpoint-restore/criu/archive/refs/tags/v\${CRIU_VERSION}.tar.gz \\" >> ${file}
-        
-        echo -e "\t&& tar -xzf v\${CRIU_VERSION}.tar.gz \\" \
-                "\n\t&& cd criu-\${CRIU_VERSION}  \\" \
-                "\n\t&& make \\" \
-                "\n\t&& make install \\" \
-                "\n\t&& cd .. \\" \
-                "\n\t&& rm -rf v\${CRIU_VERSION}.tar.gz criu-\${CRIU_VERSION} \\" \
-                "\n\t&& setcap cap_chown,cap_dac_override,cap_dac_read_search,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_net_admin,cap_sys_chroot,cap_sys_ptrace,cap_sys_admin,cap_sys_resource,cap_sys_time,cap_audit_control=eip /usr/local/sbin/criu" \
-                "\n\n# Run ldconfig to discover newly installed shared libraries" \
-                "\nRUN for dir in lib lib64 ; do echo /usr/local/$dir ; done > /etc/ld.so.conf.d/usr-local.conf \\" \
-                "\n\t&& ldconfig " \
+        # Method 1: Install from package repo
+        # echo -e "\n# Install criu and set capabilities" \
+        #         "\nRUN add-apt-repository ppa:criu/ppa \\" \
+        #         "\n\t&& apt-get update \\" \
+        #         "\n\t&& apt-get install -y --no-install-recommends criu \\" \
+        #         "\n\t&& criu -V \\" \
+        #         "\n\t&& setcap cap_chown,cap_dac_override,cap_dac_read_search,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_net_admin,cap_sys_chroot,cap_sys_ptrace,cap_sys_admin,cap_sys_resource,cap_sys_time,cap_audit_control=eip /usr/sbin/criu" \
+        #         "\n\t&& export GLIBC_TUNABLES=glibc.pthread.rseq=0:glibc.cpu.hwcaps=-XSAVEC,-XSAVE,-AVX2,-ERMS,-AVX,-AVX_Fast_Unaligned_Load" \
+        #         "\n" >> ${file}
+
+        # Method 2: build from source code
+        echo -e "\n# Install dependent packages for criu" \
+                "\nRUN apt-get update \\" \
+                "\n\t&& apt-get install -y --no-install-recommends iptables libbsd-dev libcap-dev libdrm-dev libnet1-dev libgnutls28-dev libgnutls30 libnftables-dev libnl-3-dev libprotobuf-dev python3-distutils protobuf-c-compiler protobuf-compiler xmlto libssl-dev python3-future libxt-dev libfontconfig1-dev python3-protobuf nftables libcups2-dev libasound2-dev libxtst-dev libexpat1-dev libfontconfig libaio-dev libffi-dev libx11-dev libprotobuf-c-dev libnuma-dev libfreetype6-dev libxrandr-dev libxrender-dev libelf-dev libxext-dev libdwarf-dev" \
+                "\n" >> ${file}
+
+        echo -e "\n# Build criu and set capabilities" \
+                "\nRUN mkdir -p /tmp \\" \
+                "\n\t&& cd /tmp \\" \
+                "\n\t&& git clone https://github.com/checkpoint-restore/criu.git \\" \
+                "\n\t&& cd criu \\" \
+                "\n\t&& git fetch origin \\" \
+                "\n\t&& git reset --hard origin/criu-dev \\" \
+                "\n\t&& make PREFIX=/usr install \\" \
+                "\n\t&& criu -V \\" \
+                "\n\t&& setcap cap_checkpoint_restore,cap_chown,cap_dac_override,cap_dac_read_search,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_net_admin,cap_sys_chroot,cap_sys_ptrace,cap_sys_admin,cap_sys_resource,cap_sys_time,cap_audit_control=eip /usr/sbin/criu \\" \
+                "\n\t&& export GLIBC_TUNABLES=glibc.pthread.rseq=0:glibc.cpu.hwcaps=-XSAVEC,-XSAVE,-AVX2,-ERMS,-AVX,-AVX_Fast_Unaligned_Load" \
                 "\n" >> ${file}
     fi
 }

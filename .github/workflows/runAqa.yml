@@ -58,7 +58,7 @@ jobs:
           \`\`\`
           No builds were started.
           `;
-          github.issues.createComment({
+          github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
@@ -87,7 +87,7 @@ jobs:
 
           Workflow Run ID: [${{ steps.workflow_run_info.outputs.id }}](${{ steps.workflow_run_info.outputs.url }})
           `;
-          github.issues.createComment({
+          github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
@@ -146,7 +146,7 @@ jobs:
             core.setFailed(`Request failed with error ${err}`)
           }
     - name: AQA
-      uses: adoptium/run-aqa@v1
+      uses: adoptium/run-aqa@v2
       with:
          build_list: ${{ matrix.build_list }}
          target: ${{ matrix.target }}
@@ -154,7 +154,7 @@ jobs:
          version: ${{ matrix.jdk_version }}
          openjdk_testRepo: '${{ fromJSON(steps.get-pr.outputs.result).head.repo.full_name }}:${{ fromJSON(steps.get-pr.outputs.result).head.ref }}'
          tkg_Repo: ${{ matrix.tkg_repo }}
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       if: failure()
       with:
         name: test_output
@@ -174,7 +174,7 @@ jobs:
           @${{ github.actor }} Build(s) failed.
           Workflow Run ID: [${{ needs.parseComment.outputs.workflow_id }}](${{ needs.parseComment.outputs.workflow_url }})
           `;
-          github.issues.createComment({
+          github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
@@ -195,7 +195,7 @@ jobs:
           @${{ github.actor }} Build(s) cancelled.
           Workflow Run ID: [${{ needs.parseComment.outputs.workflow_id }}](${{ needs.parseComment.outputs.workflow_url }})
           `;
-          github.issues.createComment({
+          github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
@@ -216,7 +216,7 @@ jobs:
           @${{ github.actor }} Build(s) successful.
           Workflow Run ID: [${{ needs.parseComment.outputs.workflow_id }}](${{ needs.parseComment.outputs.workflow_url }})
           `;
-          github.issues.createComment({
+          github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,

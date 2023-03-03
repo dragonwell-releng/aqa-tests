@@ -64,6 +64,13 @@ ifeq (,$(findstring $(JDK_IMPL),hotspot))
   JAVA_ARGS += -Xdump:system:events=user
 endif
 
+ifndef APPLICATION_OPTIONS
+  APPLICATION_OPTIONS :=
+endif
+ifdef JVM_OPTIONS
+  APPLICATION_OPTIONS := $(APPLICATION_OPTIONS) -jvmArgs $(Q)$(JVM_OPTIONS)$(Q)
+endif
+
 define SYSTEMTEST_CMD_TEMPLATE
 perl $(SYSTEMTEST_RESROOT)$(D)STF$(D)stf.core$(D)scripts$(D)stf.pl \
   -test-root=$(Q)$(SYSTEMTEST_RESROOT)$(D)STF;$(SYSTEMTEST_RESROOT)$(D)aqa-systemtest$(OPENJ9_PRAM)$(Q) \

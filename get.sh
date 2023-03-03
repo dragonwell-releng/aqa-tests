@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -eo pipefail
 
 SDKDIR=""
 TESTDIR="$(pwd)"
@@ -192,7 +192,11 @@ getBinaryOpenjdk()
 		arr=(${download_urls/ / })
 		download_url=()
 		for n in "${arr[@]}" ; do
-			download_url+=" ${latestBuildUrl}${n}"
+			required=true
+			checkURL "$n"
+			if [ $required != false ]; then
+				download_url+=" ${latestBuildUrl}${n}"
+			fi
 		done
 	elif [ "$CUSTOMIZED_SDK_URL" != "" ]; then
 		download_url=$CUSTOMIZED_SDK_URL
@@ -475,7 +479,7 @@ executeCmdWithRetry()
 			sleep $sleep_time
 
 			echo "check for $1. If found, the file will be removed."
-			if [ -f "$1" ]; then
+			if [ "$1" != "" ] && [ -f "$1" ]; then
 				echo "remove $1 before retry..."
 				rm $1
 			fi
@@ -485,8 +489,8 @@ executeCmdWithRetry()
 		rt_code=$?
 		count=$(( $count + 1 ))
 	done
-	return "$rt_code"
 	set -e
+	return "$rt_code"	
 }
 
 getFunctionalTestMaterial()
@@ -510,8 +514,7 @@ getFunctionalTestMaterial()
 	then
 		echo "update to openj9 sha: $OPENJ9_SHA"
 		cd openj9
-		echo "git fetch -q --unshallow"
-		git fetch -q --unshallow
+		executeCmdWithRetry "" "git fetch -q --unshallow"
 		if ! git checkout $OPENJ9_SHA; then
 			echo "SHA not yet found. Continue fetching PR refs and tags..."
 			echo "git fetch -q --tags $OPENJ9_REPO +refs/pull/*:refs/remotes/origin/pr/*"
@@ -636,10 +639,10 @@ testJavaVersion()
 		# Search javac as java may not be unique
 		if [[ "$CODE_COVERAGE" == "true" ]]; then
 			echo "${TEST_JDK_HOME}/build/bin/java does not exist! Searching under TEST_JDK_HOME: ${TEST_JDK_HOME}..."
-			javac_path=`find ${TEST_JDK_HOME} \( -path "*/images/jdk/bin/javac" -o -path "*/images/jdk/bin/javac.exe" \)`
+			javac_path=`find ${TEST_JDK_HOME} \( -name javac -o -name javac.exe \) | egrep '/images/jdk/bin/javac$|/images/jdk/bin/javac.exe$'`
 		else
 			echo "${TEST_JDK_HOME}/bin/java does not exist! Searching under TEST_JDK_HOME: ${TEST_JDK_HOME}..."
-			javac_path=`find ${TEST_JDK_HOME} \( -path "*/bin/javac" -o -path "*/bin/javac.exe" \)`
+			javac_path=`find ${TEST_JDK_HOME} \( -name javac -o -name javac.exe \) | egrep 'bin/javac$|bin/javac.exe$'`
 		fi
 		if [ "$javac_path" != "" ]; then
 			echo "javac_path: ${javac_path}"

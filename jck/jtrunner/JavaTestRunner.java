@@ -63,8 +63,11 @@ public class JavaTestRunner {
 	private static String jckConfigLoc;
 	private static String initialJtxFullPath;
 	private static String jtxFullPath;
+	private static String jtxDevFullPath;
+	private static String customJtx;
 	private static String kflFullPath;
 	private static String testFlagJtxFullPath;
+	private static String[] testFlagList;
 	private static String krbConfFile;
 	private static String fileUrl;
 
@@ -120,6 +123,7 @@ public class JavaTestRunner {
 	private static final String CONCURRENCY = "concurrency"; 
 	private static final String CONFIG_ALT_PATH = "configAltPath"; 
 	private static final String TASK = "task";
+	private static final String CUSTOM_JTX = "customJtx";
 
 	public static void main(String args[]) throws Exception {
 		ArrayList<String> essentialParameters = new ArrayList<String>(); 
@@ -136,6 +140,7 @@ public class JavaTestRunner {
 		essentialParameters.add(CONCURRENCY);
 		essentialParameters.add(CONFIG_ALT_PATH);
 		essentialParameters.add(TASK);
+		essentialParameters.add(CUSTOM_JTX);
 
 		for (String arg : args) {
 			if (arg.contains("=")) { 
@@ -169,6 +174,7 @@ public class JavaTestRunner {
 		jvmOpts = System.getProperty("jvm.options").trim() + " " + System.getProperty("other.opts"); 
 		testFlag = System.getenv("TEST_FLAG");
 		task = testArgs.get(TASK);
+		customJtx = testArgs.get(CUSTOM_JTX);
 		
 		try { 
 			boolean jtbGenerated = false, testSuccedded = false, summaryGenerated = false;
@@ -218,6 +224,7 @@ public class JavaTestRunner {
 					if (!jckVersion.equals(actualJckVersion)) {
 						System.out.println("test-args jckversion " + jckVersion + " does not match actual jckversion " + actualJckVersion + ". Using actual jckversion " + actualJckVersion);
 						jckVersion = actualJckVersion;
+						jckVersionNo = jckVersion.replace("jck", "");
 					}
 				}
 			}
@@ -241,7 +248,12 @@ public class JavaTestRunner {
 		}
 
 		jtiFile = configAltPath + File.separator + jckVersion + File.separator + testSuite.toLowerCase() + ".jti"; 
-		fileUrl = "file:///" + jckBase + "/testsuite.jtt";
+                if (platform.contains("win")) {
+                        // Jck fileURL validator validates using java.net.URI, so must use forward slashes "/" 
+			fileUrl = "file:///" + jckBase.replace("\\","/") + "/testsuite.jtt";
+                } else {
+			fileUrl = "file:///" + jckBase + "/testsuite.jtt";
+		}
 		System.out.println("Using jti file "+ jtiFile);
 		
 		// The first release of a JCK will have an initial excludes (.jtx) file in test-suite/lib - e.g. JCK-runtime-8b/lib/jck8b.jtx.
@@ -267,6 +279,27 @@ public class JavaTestRunner {
 			System.out.println("Unable to find additional excludes list file " + jtxFullPath);
 			jtxFullPath = "";
 		}
+		
+		jtxDevFullPath = jckRoot + File.separator + "excludes" + File.separator + jckVersion + "-dev.jtx";
+		File jtxDevFile = new File(jtxDevFullPath);
+		
+		if (jtxDevFile.exists()) {
+			System.out.println("Using additional excludes list file " + jtxDevFullPath);
+		} else {
+			System.out.println("Unable to find additional excludes list file " + jtxDevFullPath);
+			jtxDevFullPath = "";
+		}
+		
+		if (customJtx == null) {
+			customJtx = "";
+		} else {
+			File customJtxFile = new File(customJtx);
+			if (customJtxFile.exists()) {
+				System.out.println("Using additional custom excludes list file " + customJtx);
+			} else {
+				System.out.println("Unable to find additional custom excludes list file " + customJtx);
+			}
+		}
 
 		// Look for a known failures list file
 		kflFullPath = jckRoot + File.separator + "excludes" + File.separator + jckVersion + ".kfl";
@@ -278,19 +311,32 @@ public class JavaTestRunner {
 			System.out.println("Unable to find known failures list file " + kflFullPath);
 			kflFullPath = "";
 		}
+		
+		testFlagJtxFullPath = "";
 
 		if (task == null || !task.equals("custom")) {
-			testFlagJtxFullPath = "";
-			if (testFlag != null) {
+			if (testFlag != null && testFlag.length() > 0 ) {
 				// Look for a known failures list file specific to TEST_FLAG testing
-				testFlagJtxFullPath = jckRoot + File.separator + "excludes" + File.separator + jckVersion + "-" + testFlag.toLowerCase() + ".jtx";
-				File testFlagJtxFile = new File(testFlagJtxFullPath);
-				
-				if (testFlagJtxFile.exists()) {
-					System.out.println("Using " + testFlag + " specific failures list file " + testFlagJtxFullPath);
+				if (testFlag.contains(",")) {
+					testFlagList = testFlag.split(",");
 				} else {
-					System.out.println("Unable to find " + testFlag + " specific failures list file " + testFlagJtxFullPath);
-					testFlagJtxFullPath = "";
+					testFlagList = new String[] { testFlag };
+				}
+				
+				for ( String aFlag : testFlagList ) { 
+					String aTestFlagExclude = jckRoot + File.separator + "excludes" + File.separator + jckVersion + "-" + aFlag.toLowerCase() + ".jtx";
+					File testFlagJtxFile = new File(aTestFlagExclude);
+					
+					if (testFlagJtxFile.exists()) {
+						System.out.println("Using " + aFlag + " specific failures list file: " + aTestFlagExclude);
+						if (testFlagJtxFullPath.length() == 0) { 
+							testFlagJtxFullPath = aTestFlagExclude;
+						} else {
+							testFlagJtxFullPath = testFlagJtxFullPath + " " + aTestFlagExclude;
+						}
+					} else {
+						System.out.println("Unable to find " + aFlag + " specific failures list file: " + aTestFlagExclude);
+					}
 				}
 			}
 		}
@@ -335,10 +381,10 @@ public class JavaTestRunner {
 			}
 		}
 		
+		secPropsFile = resultDir + File.separator + "security.properties";
+		
 		if (tests.contains("api/javax_net") ) {
 			// Requires TLS 1.0/1.1 enabling
-			secPropsFile = resultDir + File.separator + "security.properties";
-			System.out.println("Custom security properties to be stored in: " + secPropsFile);
 			String secPropsContents = "jdk.tls.disabledAlgorithms=SSLv3, RC4, DES, MD5withRSA, DH keySize < 1024, EC keySize < 224, anon, NULL, include jdk.disabled.namedCurves";
 			BufferedWriter bw = new BufferedWriter(new FileWriter(new File(secPropsFile))); 
 			bw.write(secPropsContents); 
@@ -346,11 +392,11 @@ public class JavaTestRunner {
 			bw.close();
 		}
 
-		if ( getJckVersionInt(jckVersionNo) >= 18 && (tests.contains("api/java_net") || tests.contains("api/java_util")) ) {
-			// Requires SHA1 enabling for jar signers in jdk-18+
-			secPropsFile = resultDir + File.separator + "security.properties";
-			System.out.println("Custom security properties to be stored in: " + secPropsFile);
-			String secPropsContents = "jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, DSA keySize < 1024";
+		if ( getJckVersionInt(jckVersionNo) >= 8 && (tests.contains("api/java_net") || tests.contains("api/java_util")) ) {
+			// Requires SHA1 enabling for jar signers in jdk-11+
+			String secPropsContents = "jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, DSA keySize < 1024, include jdk.disabled.namedCurves\n";
+			secPropsContents += "jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & usage TLSServer, \\" + "\n";
+			secPropsContents += "RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224, include jdk.disabled.namedCurves" + "\n";
 			BufferedWriter bw = new BufferedWriter(new FileWriter(new File(secPropsFile)));
 			bw.write(secPropsContents);
 			bw.flush();
@@ -359,8 +405,6 @@ public class JavaTestRunner {
 		
 		if ( tests.contains("api/javax_xml") ) {
 			// Requires SHA1 enabling
-			secPropsFile = resultDir + File.separator + "security.properties";
-			System.out.println("Custom security properties to be stored in: " + secPropsFile);
 			String secPropsContents = "jdk.xml.dsig.secureValidationPolicy=\\" + "\n";
 			secPropsContents += "disallowAlg http://www.w3.org/TR/1999/REC-xslt-19991116,\\" + "\n";
 			secPropsContents += "disallowAlg http://www.w3.org/TR/1999/REC-xslt-19991116,\\" + "\n";
@@ -383,6 +427,21 @@ public class JavaTestRunner {
 			bw.close();
 		}
 
+		if (new File(secPropsFile).length() != 0) { 
+			System.out.println("Echoing contents of generated security.properties file : " + secPropsFile); 
+			System.out.println(">>>>>>>>>>");
+			BufferedReader br = new BufferedReader (new FileReader(secPropsFile)); 
+			while(true) {
+				String s = br.readLine(); 
+				if ( s == null) {
+					break; 
+				} else {
+					System.out.println(s); 
+				}
+			}
+			System.out.println("<<<<<<<<");
+		}
+			
 		// Some tests provoke out of memory exceptions.
 		// If we're testing a J9 VM that will result in dumps being taken and a non-zero return code
 		// which stf will detect as a failure. So in this case add the -Xdump options required to suppress
@@ -415,9 +474,9 @@ public class JavaTestRunner {
 		// Only use default initial jtx exclude and disregard the rest of jck exclude lists 
 		// when running a test via jck_custom.
 		if (task == null || !task.equals("custom")) {  
-			fileContent += "set jck.excludeList.customFiles \"" + initialJtxFullPath + " " + jtxFullPath + " " + kflFullPath + " " + testFlagJtxFullPath + "\";\n";
+			fileContent += "set jck.excludeList.customFiles \"" + initialJtxFullPath + " " + jtxFullPath + " " + jtxDevFullPath + " " + customJtx + " " + kflFullPath + " " + testFlagJtxFullPath + "\";\n";
 		} else {
-			fileContent += "set jck.excludeList.customFiles \"" + initialJtxFullPath + " " + jtxFullPath + " " + kflFullPath + "\";\n";
+			fileContent += "set jck.excludeList.customFiles \"" + initialJtxFullPath + " " + jtxFullPath + " " + customJtx + " " + kflFullPath + "\";\n";
 		}
 		
 		fileContent += "runTests" + ";\n";
@@ -944,9 +1003,9 @@ public class JavaTestRunner {
 			int jckRC = -1;
 			boolean endedWithinTimeLimit = false;
 			
-			// Use the presence of a '/' to signify that we are running a subset of tests.
-			// If one of the highest level test nodes is being run it is likely to take a long time.
-			if ( tests.contains("/") && !isRiscv ) {
+			// Use the presence of more than one '/' to signify that we are running a smaller subset of tests.
+			// If one of the highest level subsets of tests is being run it is likely to take a long time.
+			if ( tests.chars().filter(c -> c == '/').count() > 1 && !isRiscv ) {
 				timeout = 4;
 			}
 
@@ -1194,7 +1253,7 @@ public class JavaTestRunner {
 	private static String getTestSpecificJvmOptions(String jckVersion, String tests) {
 		String testSpecificJvmOptions = "";
 		
-		if ( tests.contains("api/javax_net") || tests.contains("api/javax_xml") || (getJckVersionInt(jckVersionNo) >= 18 && (tests.contains("api/java_net") || tests.contains("api/java_util"))) ) {
+		if ( tests.contains("api/javax_net") || tests.contains("api/javax_xml") || (getJckVersionInt(jckVersionNo) >= 8 && (tests.contains("api/java_net") || tests.contains("api/java_util"))) ) {
 			// Needs extra security.properties
 			testSpecificJvmOptions += " -Djava.security.properties=" + secPropsFile;
 		}
