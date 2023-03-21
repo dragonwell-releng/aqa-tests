@@ -342,13 +342,6 @@
 	</test>
 	<test>
 		<testCaseName>jck-runtime-api-javax_naming-spi</testCaseName>
-		<disables>
-		<disable>
-				<comment>Requires UI https://github.com/temurin-compliance/temurin-compliance/issues/29</comment>
-				<platform>x86-64_mac|aarch64_mac</platform>
-  				<impl>hotspot</impl>
-			</disable>
-		</disables>
 		<variations>
 			<variation>NoOptions</variation>
 		</variations>
@@ -396,7 +389,7 @@
 		<command>$(JCK_CMD_TEMPLATE) tests=api/java_applet testsuite=RUNTIME; \
 	$(TEST_STATUS)</command>
 		<levels>
-			<level>extended</level>
+			<level>sanity</level>
 		</levels>
 		<groups>
 			<group>jck</group>
@@ -413,21 +406,6 @@
 				<comment>backlog/issues/608 : To be run manually</comment>
 				<impl>openj9</impl>
 			</disable>
-			<disable>
-				<comment>Requires UI https://github.com/temurin-compliance/temurin-compliance/issues/29</comment>
-				<platform>x86-64_mac|aarch64_mac</platform>
-				<impl>hotspot</impl>
-			</disable>
-			<disable>
-				<comment>Requires UI https://github.com/temurin-compliance/temurin-compliance/issues/29</comment>
-				<platform>x86-32_windows</platform>
-				<impl>hotspot</impl>
- 			</disable>
- 			<disable>
-				<comment>Requires UI https://github.com/temurin-compliance/temurin-compliance/issues/29</comment>
-				<platform>x86-64_windows</platform>
-				<impl>hotspot</impl>
- 			</disable>
 		</disables>
 		<variations>
 			<variation>NoOptions</variation>
@@ -468,7 +446,8 @@
 		<variations>
 			<variation>NoOptions</variation>
 		</variations>
-		<command>$(JCK_CMD_TEMPLATE) tests=api/java_io testsuite=RUNTIME; \
+		<!-- This testcase opens many files which can exceed max open files, so limit concurrency to 1 --> 
+		<command>$(JCK_CMD_TEMPLATE) tests=api/java_io testsuite=RUNTIME concurrency=1; \
 	$(TEST_STATUS)</command>
 		<levels>
 			<level>extended</level>
@@ -511,6 +490,11 @@
 			<disable>
 				<comment>Disabled on all platforms due to backlog/issues/462. Awaiting some automation improvements, in the interim these targets will be run manually</comment>
 				<platform>.*zos.*</platform>
+			</disable>
+			<disable>
+				<comment>Disabled due to backlog/issues/921,923,750. Awaiting some automation improvements, in the interim these targets will be run manually</comment>
+				<platform>ppc64_aix|x86-64_mac|x86-64_windows|x86-32_windows</platform>
+				<impl>openj9</impl>
 			</disable>
 		</disables>
 		<variations>
@@ -629,12 +613,6 @@
 		<testCaseName>jck-runtime-api-java_util</testCaseName>
 		<disables>
 			<disable>
-				<comment>Disabled on osx and win for backlog/issues/489. Awaiting some automation improvements, in the interim these targets will be run manually</comment>
-				<platform>x86-64_windows|x86-64_mac</platform>
-				<version>11</version>
-				<impl>openj9</impl>
-			</disable>
-			<disable>
 				<comment>Disabled on z/OS due to backlog/issues/732</comment>
 				<platform>.*zos.*</platform>
 				<impl>ibm</impl>
@@ -668,7 +646,7 @@
 		<command>$(JCK_CMD_TEMPLATE) tests=api/javax_accessibility testsuite=RUNTIME; \
 	$(TEST_STATUS)</command>
 		<levels>
-			<level>extended</level>
+			<level>sanity</level>
 		</levels>
 		<groups>
 			<group>jck</group>
@@ -699,7 +677,7 @@
 		<command>$(JCK_CMD_TEMPLATE) tests=api/javax_activity testsuite=RUNTIME; \
 	$(TEST_STATUS)</command>
 		<levels>
-			<level>extended</level>
+			<level>sanity</level>
 		</levels>
 		<groups>
 			<group>jck</group>
@@ -716,7 +694,7 @@
 		<command>$(JCK_CMD_TEMPLATE) tests=api/javax_annotation testsuite=RUNTIME; \
 	$(TEST_STATUS)</command>
 		<levels>
-			<level>extended</level>
+			<level>sanity</level>
 		</levels>
 		<groups>
 			<group>jck</group>
@@ -914,6 +892,14 @@
 	</test>
 	<test>
 		<testCaseName>jck-runtime-api-javax_sound</testCaseName>
+		<disables>
+			<disable>
+				<comment>Temporarily disabled on x64 + aarch64 Mac for backlog/issues/718</comment>
+				<platform>(?:aarch64_mac.*|x86-64_mac.*)</platform>
+				<impl>openj9</impl>
+				<version>11+</version>
+			</disable>
+		</disables>
 		<variations>
 			<variation>NoOptions</variation>
 		</variations>
@@ -951,21 +937,6 @@
 				<comment>backlog/issues/608 : To be run manually</comment>
 				<impl>openj9</impl>
 			</disable>
-			<disable>
-				<comment>Requires UI https://github.com/temurin-compliance/temurin-compliance/issues/29</comment>
-				<platform>x86-64_mac</platform>
-				<impl>hotspot</impl>
-			</disable>
-			<disable>
-				<comment>Requires UI https://github.com/temurin-compliance/temurin-compliance/issues/29</comment>
-				<platform>x86-32_windows</platform>
-				<impl>hotspot</impl>
-			</disable>
-			<disable>
-				<comment>Requires UI https://github.com/temurin-compliance/temurin-compliance/issues/29</comment>
-				<platform>x86-64_windows</platform>
-				<impl>hotspot</impl>
-			</disable>
 		</disables>
 		<variations>
 			<variation>NoOptions</variation>
@@ -995,7 +966,7 @@
 		<command>$(JCK_CMD_TEMPLATE) tests=api/javax_tools testsuite=RUNTIME; \
 	$(TEST_STATUS)</command>
 		<levels>
-			<level>extended</level>
+			<level>sanity</level>
 		</levels>
 		<groups>
 			<group>jck</group>
@@ -1060,6 +1031,12 @@
 			<disable>
 				<comment>backlog/issues/567</comment>
 				<platform>.*zos.*</platform>
+			</disable>
+			<disable>
+				<comment>Temporarily disabled on x64 + aarch64 Mac for infrastructure/issues/7151</comment>
+				<platform>(?:aarch64_mac.*|x86-64_mac.*)</platform>
+				<impl>openj9</impl>
+				<version>11</version>
 			</disable>
 		</disables>
 	</test>

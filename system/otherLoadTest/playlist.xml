@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <playlist xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../TKG/playlist.xsd">
-	<include>../systemtest.mk</include>
+	<include>../system.mk</include>
 	<!-- 
 	Special target to get machine information. This target is in each subfolder playlist.xml.
 	To avoid test target duplication, this belongs to sanity, extended and special. Regular test should only belong to one level -->
@@ -296,6 +296,11 @@
 			<disable>
 				<comment>https://github.com/eclipse-openj9/openj9/issues/15250</comment>
 				<impl>openj9</impl>
+				<version>19+</version>
+			</disable>
+			<disable>
+				<comment>https://github.com/adoptium/aqa-systemtest/issues/479</comment>
+				<impl>hotspot</impl>
 				<version>19+</version>
 			</disable>
 		</disables>
