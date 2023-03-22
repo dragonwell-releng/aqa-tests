@@ -571,7 +571,6 @@ def buildTest() {
 					echo "Cannot run copyArtifacts from ${params.UPSTREAM_TEST_JOB_NAME} ${params.UPSTREAM_TEST_JOB_NUMBER}. Skipping copyArtifacts..."
 				}
 			}
-		}
 
 		try {
 			//get pre-staged jars from test.getDependency build before test compilation
