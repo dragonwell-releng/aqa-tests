@@ -204,6 +204,12 @@ java/net/InetAddress/InternalNameServiceWithHostsFileTest.java https://github.co
 java/nio/channels/DatagramChannel/SendReceiveMaxSize.java https://github.com/adoptium/aqa-tests/issues/3820 aix-all
 java/net/DatagramSocket/SendReceiveMaxSize.java https://github.com/adoptium/aqa-tests/issues/3820 aix-all
 com/sun/net/httpserver/simpleserver/StressDirListings.java https://github.com/adoptium/aqa-tests/issues/3841 aix-all
+java/net/vthread/HttpALot.java https://github.com/adoptium/aqa-tests/issues/4024 aix-all
+java/net/vthread/BlockingSocketOps.java https://github.com/adoptium/aqa-tests/issues/4024 aix-all
+java/net/vthread/HttpALot.java https://github.com/adoptium/aqa-tests/issues/4024 aix-all
+java/net/vthread/BlockingSocketOps.java https://github.com/adoptium/aqa-tests/issues/4024 aix-all
+java/net/vthread/InterruptHttp.java https://github.com/adoptium/aqa-tests/issues/4024 aix-all
+sun/net/www/http/KeepAliveCache/KeepAliveProperty.java https://bugs.openjdk.org/browse/JDK-8285836 linux-ppc64le
 ############################################################################
 
 # jdk_io
@@ -235,7 +241,11 @@ java/nio/file/Files/CopyAndMove.java	https://github.com/adoptium/aqa-tests/issue
 java/nio/channels/DatagramChannel/PromiscuousIPv6.java	https://github.com/adoptium/infrastructure/issues/699    linux-s390x
 
 java/nio/channels/Channels/ReadXBytes.java  https://github.com/adoptium/aqa-tests/issues/3034  linux-aarch64,linux-ppc64le,linux-s390x
- 
+java/nio/channels/vthread/BlockingChannelOps.java#id0 https://github.com/adoptium/aqa-tests/issues/4024 aix-all
+
+
+
+
 
 ############################################################################ 
 
@@ -427,6 +437,9 @@ compiler/c2/cr6340864/TestShortVect.java https://github.com/adoptium/aqa-tests/i
 compiler/c2/irTests/TestSkeletonPredicates.java https://github.com/adoptium/aqa-tests/issues/2382 windows-x86
 compiler/c2/irTests/TestStripMiningDropsSafepoint.java https://github.com/adoptium/aqa-tests/issues/2382 windows-x86
 compiler/c2/irTests/TestSuperwordFailsUnrolling.java https://github.com/adoptium/aqa-tests/issues/2382 windows-x86
+
+compiler/codegen/aes/Test8292158.java https://github.com/adoptium/aqa-tests/issues/4470 linux-s390x
+compiler/codegen/aes/TestAESMain.java https://github.com/adoptium/aqa-tests/issues/4470 linux-s390x
 ############################################################################
 
 # jdk_jfr
@@ -504,3 +517,5 @@ sun/net/www/protocol/jar/MultiReleaseJarURLConnection.java https://github.com/ad
 
 #####################################
 
+# jdk_container/hotspot_container
+containers/docker/TestMemoryWithCgroupV1.java https://bugs.openjdk.org/browse/JDK-8297274 linux-all

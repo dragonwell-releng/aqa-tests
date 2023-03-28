@@ -24,12 +24,27 @@
 	<property name="DEST" value="${BUILD_ROOT}/openjdk" />
 	<property name="src" location="." />
 	<property environment="env" />
-	<property name="REFERENCE_REPO" value="--reference-if-able ${env.HOME}/openjdk_cache" />
+
+	<if>
+		<contains string="${SPEC}" substring="win" />
+		<then>
+			<path id="home.path">
+				<pathelement path="${env.HOME}" />
+			</path>
+			<pathconvert targetos="unix" property="home.unix" refid="home.path"/>
+			<echo message="pathconvert ${env.HOME} to unix on windows. home.unix is set to ${home.unix}" />
+		</then>
+		<else>
+			<property name="home.unix" value="${env.HOME}" />
+		</else>
+	</if>
+	
+	<property name="REFERENCE_REPO" value="--reference-if-able ${home.unix}/openjdk_cache" />
 
 	<if>
 		<or>
 			<matches pattern="^[89]{1}$" string="${JDK_VERSION}"/>
-			<matches pattern="^[1][0123456]" string="${JDK_VERSION}"/>
+			<matches pattern="^[1][023456]" string="${JDK_VERSION}"/>
 		</or>
 		<then>
                   <if>
@@ -44,12 +59,20 @@
 		</then>
 		<else>
 			<if> 
-				<equals arg1="${JDK_VERSION}" arg2="17" />
+				<matches pattern="^[1][17]" string="${JDK_VERSION}"/>
 				<then>
 					<property name="jtregTar" value="jtreg_6_1"/>
 				</then>
 				<else>
-					<property name="jtregTar" value="jtreg_6_1_1"/>
+					<if>
+						<matches pattern="^[1][89]" string="${JDK_VERSION}"/>
+						<then>
+							<property name="jtregTar" value="jtreg_6_1_1"/>
+						</then>
+						<else>
+							<property name="jtregTar" value="jtreg_7_1_1_1"/>
+						</else>
+					</if>
 				</else>
 			</if>
 		</else>
@@ -82,7 +105,7 @@
 					<available file="custom_jtreg.tar.gz"/>
 					<then>
 						<echo message="Using custom_jtreg.tar.gz"/>
-							<copy file="custom_jtreg.tar.gz" tofile="${jtregTar}.tar.gz"/>
+						<copy file="custom_jtreg.tar.gz" tofile="${jtregTar}.tar.gz"/>
 					</then>
 				</if>
 			</then>

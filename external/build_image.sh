@@ -17,23 +17,27 @@ set -o pipefail
 source $(dirname "$0")/common_functions.sh
 source $(dirname "$0")/dockerfile_functions.sh
 buildArg=""
+container_build="docker build"
 
-if [ $# -ne 8 ] && [ $# -ne 7 ]; then
+if [ $# -ne 9 ] && [ $# -ne 8 ]; then
 	echo "The supported tests are ${supported_tests}"
 	echo
-	echo "usage: $0 test version vm os package build check_external_custom"
+	echo "usage: $0 test version vm os package build platform check_external_custom"
 	echo "test    = ${supported_tests}"
 	echo "version = ${supported_versions}"
 	echo "vm      = ${supported_jvms}"
 	echo "os      = ${supported_os}"
 	echo "package = ${supported_packages}"
 	echo "build   = ${supported_builds}"
+	# TO-DO: ${supported_platforms} will be added when portable tests support more platforms
+	echo "platform" = "mutiple platforms"
 	echo "buildArg" = "Optional: customized image"
 	exit -1
 fi
-if [ $# -eq 8 ]; then
-	buildArg="--build-arg IMAGE=$8"
+if [ $# -eq 9 ]; then
+	buildArg="--build-arg IMAGE=$9"
 fi
+check_external_custom=$8
 if [[ ${check_external_custom} -eq 0 ]]; then
 	set_test $1
 fi
@@ -42,7 +46,7 @@ set_vm $3
 set_os $4
 set_package $5
 set_build $6
-
+set_platform $7
 
 # Build the Docker image with the given repo, build, build type and tags.
 function build_image() {
@@ -53,19 +57,22 @@ function build_image() {
     local os=$5
     local package=$6
     local build=$7
-    local buildArg=$8
-    
+    local platform=$8
+    local buildArg=$9
 
 	echo "The test in the build_image() function is ${test}"
     # Used for tagging the image
     tags="adoptopenjdk-${test}-test:${version}-${package}-${os}-${vm}-${build}"
+	if [[ "$test" == *"criu"* ]]; then
+		container_build="sudo podman build"
+	fi
 
 	echo "#####################################################"
-	echo "INFO: docker build ${buildArg} --no-cache -t ${tags} -f ${file} $(realpath $(dirname "$0"))/"
+	echo "INFO: $container_build ${buildArg} --no-cache -t ${tags} -f ${file} $(realpath $(dirname "$0"))/"
 	echo "#####################################################"
-	docker build ${buildArg} --no-cache -t ${tags} -f ${file} $(realpath $(dirname "$0"))/
+	$container_build ${buildArg} --no-cache -t ${tags} -f ${file} $(realpath $(dirname "$0"))/
 	if [ $? != 0 ]; then
-		echo "ERROR: Docker build of image: ${tags} from ${file} failed."
+		echo "ERROR: $container_build of image: ${tags} from ${file} failed."
 		exit 1
 	fi
 }
@@ -82,7 +89,7 @@ mkdir -p ${dir}
 file="${dir}/Dockerfile.${vm}.${build}"
 
 # Generate Dockerfile
-generate_dockerfile ${file} ${test} ${version} ${vm} ${os} ${package} ${build} ${check_external_custom}
+generate_dockerfile ${file} ${test} ${version} ${vm} ${os} ${package} ${build} ${platform} ${check_external_custom}
 
 # Check if Dockerfile exists
 if [ ! -f ${file} ]; then
@@ -91,4 +98,4 @@ if [ ! -f ${file} ]; then
 fi
 
 # Build Dockerfile that was generated
-build_image ${file} ${test} ${version} ${vm} ${os} ${package} ${build} "${buildArg}"
+build_image ${file} ${test} ${version} ${vm} ${os} ${package} ${build} ${platform} "${buildArg}"
