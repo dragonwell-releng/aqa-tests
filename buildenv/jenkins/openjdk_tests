@@ -94,6 +94,7 @@ def PLATFORM_MAP = [
     'x86-64_alpine-linux' : [
         'SPEC' : 'alpine-linux_x86-64',
         'LABEL' : 'ci.role.test&&hw.arch.x86&&sw.os.alpine-linux',
+        'DockerAgents' : ['default']
     ],
     'x86-32_linux' : [
         'SPEC' : 'linux_x86',
@@ -201,6 +202,7 @@ timestamps{
 
             println "SPEC: ${SPEC}"
             println "LABEL: ${LABEL}"
+            println "dockerAgents: ${dockerAgents}"
 
             stage('Queue') {
                 if (!areNodesWithLabelOnline(LABEL) && !dockerAgents) {
@@ -250,6 +252,14 @@ timestamps{
                                     LABEL += '&&hw.arch.x86'
                                     if (!LABEL.contains('&&sw.tool.docker')) {
                                         LABEL += '&&sw.tool.docker'
+                                        env.DOCKER_REQUIRED = true
+                                    }
+                                }
+                                if (dockerAgentLabel.equals('default') && SPEC.equals('alpine-linux_x86-64')) {
+                                    LABEL = LABEL.minus("&&sw.os.alpine-linux")
+                                    if (!LABEL.contains('&&sw.tool.docker')) {
+                                        LABEL += '&&sw.tool.docker'
+                                        env.DOCKER_REQUIRED = true
                                     }
                                 }
                                 println "Cannot find any idle nodes. Starting run test on docker node, nodeLabel: '${LABEL}', dockerAgentLabel: '${dockerAgentLabel}'"
@@ -359,6 +369,11 @@ def runTest() {
             docker.image('alibabadragonwell/riscv-normal-qemu_6.0.0-rvv-1.0:latest').pull()
             // The ${HOME} directory must be mounted, otherwise xvfb will fail to startup
             docker.image('alibabadragonwell/riscv-normal-qemu_6.0.0-rvv-1.0:latest').inside("-v ${env.HOME}:${env.HOME}") {
+                jenkinsfile.testBuild()
+            }
+        } else if (dockerAgentLabel.equals('default') && LABEL.contains('&&sw.tool.docker') && SPEC.equals('alpine-linux_x86-64')) {
+            docker.image('alibabadragonwelljdk/alpine_test_image').pull()
+            docker.image('alibabadragonwelljdk/alpine_test_image').inside("-v ${env.HOME}:${env.HOME} --network host --privileged -v /etc/hosts:/etc/hosts:ro -v /etc/group:/etc/group:ro -v /etc/passwd:/etc/passwd:ro -v /etc/shadow:/etc/shadow:ro") {
                 jenkinsfile.testBuild()
             }
         } else {

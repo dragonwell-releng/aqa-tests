@@ -119,7 +119,8 @@ JDK_VERSIONS.each { JDK_VERSION ->
                         string(name: 'TEST_FLAG', value: TEST_FLAG),
                         string(name: 'APPLICATION_OPTIONS', value: APPLICATION_OPTIONS),
                         booleanParam(name: 'KEEP_REPORTDIR', value: keep_reportdir),
-                        booleanParam(name: 'SETUP_JCK_RUN', value: SETUP_JCK_RUN)
+                        booleanParam(name: 'SETUP_JCK_RUN', value: SETUP_JCK_RUN),
+                        booleanParam(name: 'DOCKER_REQUIRED', value: params.DOCKER_REQUIRED)
                     ], wait: true
                     def result = downstreamJob.getResult()
                     echo " ${TEST_JOB_NAME} result is ${result}"
