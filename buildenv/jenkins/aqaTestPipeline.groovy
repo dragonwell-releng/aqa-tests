@@ -108,6 +108,8 @@ JDK_VERSIONS.each { JDK_VERSION ->
                         string(name: 'SDK_RESOURCE', value: sdk_resource_value),
                         string(name: 'CUSTOMIZED_SDK_URL',  value: download_url),
                         string(name: 'CUSTOMIZED_SDK_URL_CREDENTIAL_ID',  value: params.CUSTOMIZED_SDK_URL_CREDENTIAL_ID),
+                        string(name: 'UPSTREAM_JOB_NAME',  value: params.UPSTREAM_JOB_NAME),
+                        string(name: 'UPSTREAM_JOB_NUMBER',  value: params.UPSTREAM_JOB_NUMBER),
                         string(name: 'PARALLEL', value: PARALLEL),
                         string(name: 'NUM_MACHINES', value: NUM_MACHINES.toString()),
                         booleanParam(name: 'GENERATE_JOBS', value: AUTO_AQA_GEN),
