@@ -71,45 +71,51 @@ node {
                     }
                 }
 
-                if (AUTO_AQA_GEN) {
-                    String[] targetTokens = TARGET.split("\\.")
-                    def level = targetTokens[0];
-                    def group = targetTokens[1];
-                    def parameters = [
-                        string(name: 'LEVELS', value: level),
-                        string(name: 'GROUPS', value: group),
-                        string(name: 'JDK_VERSIONS', value: JDK_VERSION),
-                        string(name: 'ARCH_OS_LIST', value: PLATFORM),
-                        string(name: 'JDK_IMPL', value: jdk_impl),
-                        booleanParam(name: 'LIGHT_WEIGHT_CHECKOUT', value: false)
-                    ]
-                    build job: 'Test_Job_Auto_Gen', parameters: parameters, propagate: true
-                }
-    
-                def JobHelper = library(identifier: 'openjdk-jenkins-helper@master').JobHelper
-                if (JobHelper.jobIsRunnable(TEST_JOB_NAME as String)) {
-                    JOBS["${TEST_JOB_NAME}"] = {
-                        def downstreamJob = build job: TEST_JOB_NAME, propagate: false, parameters: [
-                            string(name: 'ADOPTOPENJDK_REPO', value: params.ADOPTOPENJDK_REPO),
-                            string(name: 'ADOPTOPENJDK_BRANCH', value: params.ADOPTOPENJDK_BRANCH),
-                            booleanParam(name: 'USE_TESTENV_PROPERTIES', value: USE_TESTENV_PROPERTIES),
-                            string(name: 'SDK_RESOURCE', value: sdk_resource_value),
-                            string(name: 'CUSTOMIZED_SDK_URL',  value: download_url),
-                            string(name: 'CUSTOMIZED_SDK_URL_CREDENTIAL_ID',  value: params.CUSTOMIZED_SDK_URL_CREDENTIAL_ID),
-                            string(name: 'PARALLEL', value: PARALLEL),
-                            string(name: 'NUM_MACHINES', value: NUM_MACHINES.toString()),
-                            booleanParam(name: 'GENERATE_JOBS', value: AUTO_AQA_GEN),
-                            booleanParam(name: 'LIGHT_WEIGHT_CHECKOUT', value: false),
-                            string(name: 'TIME_LIMIT', value: TIME_LIMIT.toString()),
-                            string(name: 'TRSS_URL', value: TRSS_URL),
-                            string(name: 'LABEL', value: LABEL),
-                            string(name: 'LABEL_ADDITION', value: LABEL_ADDITION),
-                            string(name: 'TEST_FLAG', value: TEST_FLAG),
-                            booleanParam(name: 'KEEP_REPORTDIR', value: keep_reportdir)
-                        ], wait: true
-                        def result = downstreamJob.getResult()
-                        echo " ${TEST_JOB_NAME} result is ${result}"
-                        if (downstreamJob.getResult() == 'SUCCESS' || downstreamJob.getResult() == 'UNSTABLE') {
+            if (AUTO_AQA_GEN) {
+                String[] targetTokens = TARGET.split("\\.")
+                def level = targetTokens[0];
+                def group = targetTokens[1];
+                def parameters = [
+                    string(name: 'LEVELS', value: level),
+                    string(name: 'GROUPS', value: group),
+                    string(name: 'JDK_VERSIONS', value: JDK_VERSION),
+                    string(name: 'ARCH_OS_LIST', value: PLATFORM),
+                    string(name: 'JDK_IMPL', value: jdk_impl),
+                    booleanParam(name: 'LIGHT_WEIGHT_CHECKOUT', value: false)
+                ]
+                build job: 'Test_Job_Auto_Gen', parameters: parameters, propagate: true
+            }
+
+            def JobHelper = library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+            if (JobHelper.jobIsRunnable(TEST_JOB_NAME as String)) {
+                JOBS["${TEST_JOB_NAME}"] = {
+                    def downstreamJob = build job: TEST_JOB_NAME, propagate: false, parameters: [
+                        string(name: 'ADOPTOPENJDK_REPO', value: params.ADOPTOPENJDK_REPO),
+                        string(name: 'ADOPTOPENJDK_BRANCH', value: params.ADOPTOPENJDK_BRANCH),
+                        booleanParam(name: 'USE_TESTENV_PROPERTIES', value: USE_TESTENV_PROPERTIES),
+                        string(name: 'SDK_RESOURCE', value: sdk_resource_value),
+                        string(name: 'CUSTOMIZED_SDK_URL',  value: download_url),
+                        string(name: 'CUSTOMIZED_SDK_URL_CREDENTIAL_ID',  value: params.CUSTOMIZED_SDK_URL_CREDENTIAL_ID),
+                        string(name: 'UPSTREAM_JOB_NAME',  value: params.UPSTREAM_JOB_NAME),
+                        string(name: 'UPSTREAM_JOB_NUMBER',  value: params.UPSTREAM_JOB_NUMBER),
+                        string(name: 'PARALLEL', value: PARALLEL),
+                        string(name: 'NUM_MACHINES', value: NUM_MACHINES.toString()),
+                        booleanParam(name: 'GENERATE_JOBS', value: AUTO_AQA_GEN),
+                        booleanParam(name: 'LIGHT_WEIGHT_CHECKOUT', value: false),
+                        string(name: 'TIME_LIMIT', value: TIME_LIMIT.toString()),
+                        string(name: 'TRSS_URL', value: TRSS_URL),
+                        string(name: 'LABEL', value: LABEL),
+                        string(name: 'LABEL_ADDITION', value: LABEL_ADDITION),
+                        string(name: 'TEST_FLAG', value: TEST_FLAG),
+                        string(name: 'APPLICATION_OPTIONS', value: APPLICATION_OPTIONS),
+                        booleanParam(name: 'KEEP_REPORTDIR', value: keep_reportdir),
+                        booleanParam(name: 'SETUP_JCK_RUN', value: SETUP_JCK_RUN)
+                    ], wait: true
+                    def result = downstreamJob.getResult()
+                    echo " ${TEST_JOB_NAME} result is ${result}"
+                    if (downstreamJob.getResult() == 'SUCCESS' || downstreamJob.getResult() == 'UNSTABLE') {
+                        echo "[NODE SHIFT] MOVING INTO CONTROLLER NODE..."
+                        node("worker || (ci.role.test&&hw.arch.x86&&sw.os.linux)") {
                             try {
                                 timeout(time: 2, unit: 'HOURS') {
                                     copyArtifacts(
