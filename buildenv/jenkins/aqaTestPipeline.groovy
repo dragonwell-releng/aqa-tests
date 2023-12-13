@@ -127,7 +127,10 @@ JDK_VERSIONS.each { JDK_VERSION ->
                         string(name: 'DOCKER_REGISTRY_URL', value: DOCKER_REGISTRY_URL),
                         string(name: 'DOCKER_REGISTRY_URL_CREDENTIAL_ID', value: DOCKER_REGISTRY_URL_CREDENTIAL_ID),
                         booleanParam(name: 'KEEP_REPORTDIR', value: keep_reportdir),
-                        booleanParam(name: 'SETUP_JCK_RUN', value: SETUP_JCK_RUN)
+                        booleanParam(name: 'SETUP_JCK_RUN', value: SETUP_JCK_RUN),
+                        booleanParam(name: 'DYNAMIC_COMPILE', value: params.DYNAMIC_COMPILE),
+                        string(name: 'JDK_BRANCH', value: params.JDK_BRANCH),
+                        string(name: 'JDK_REPO', value: params.JDK_REPO)
                     ], wait: true
                     def downstreamJobResult = downstreamJob.getResult()
                     echo " ${TEST_JOB_NAME} result is ${downstreamJobResult}"
