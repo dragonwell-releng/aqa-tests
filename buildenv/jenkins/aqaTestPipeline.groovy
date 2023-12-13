@@ -57,6 +57,10 @@ JDK_VERSIONS.each { JDK_VERSION ->
             short_name = "j9"
             jdk_impl = params.VARIANT
         }
+        if (params.VARIANT == "dragonwell") {
+            short_name = "dragonwell"
+            jdk_impl = params.VARIANT
+        }
         def download_url = params.CUSTOMIZED_SDK_URL ? params.CUSTOMIZED_SDK_URL : ""
         def sdk_resource_value = SDK_RESOURCE
 
@@ -127,7 +131,12 @@ JDK_VERSIONS.each { JDK_VERSION ->
                         string(name: 'DOCKER_REGISTRY_URL', value: DOCKER_REGISTRY_URL),
                         string(name: 'DOCKER_REGISTRY_URL_CREDENTIAL_ID', value: DOCKER_REGISTRY_URL_CREDENTIAL_ID),
                         booleanParam(name: 'KEEP_REPORTDIR', value: keep_reportdir),
-                        booleanParam(name: 'SETUP_JCK_RUN', value: SETUP_JCK_RUN)
+                        booleanParam(name: 'SETUP_JCK_RUN', value: SETUP_JCK_RUN),
+                        booleanParam(name: 'DYNAMIC_COMPILE', value: params.DYNAMIC_COMPILE),
+                        string(name: 'JDK_BRANCH', value: params.JDK_BRANCH),
+                        string(name: 'JDK_REPO', value: params.JDK_REPO),
+                        string(name: 'UPSTREAM_JOB_NAME', value: params.UPSTREAM_JOB_NAME),
+                        string(name: 'UPSTREAM_JOB_NUMBER', value: params.UPSTREAM_JOB_NUMBER)
                     ], wait: true
                     def downstreamJobResult = downstreamJob.getResult()
                     echo " ${TEST_JOB_NAME} result is ${downstreamJobResult}"
