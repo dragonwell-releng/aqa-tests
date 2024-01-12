@@ -58,6 +58,7 @@ for (i in 0..(PLATFORMS.size() - 1)) {
         string(name: 'JVM_OPTIONS', value: params.JVM_OPTIONS),
         string(name: 'JDK_REPO', value: params.JDK_REPO),
         string(name: 'JDK_BRANCH', value: params.JDK_BRANCH),
+        string(name: 'PARALLEL', value: 'None'),
         booleanParam(name: 'KEEP_WORKSPACE', value: params.KEEP_WORKSPACE)
     ]
     JOBS["${JOB_NAME}"] = {
