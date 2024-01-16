@@ -579,7 +579,7 @@ def buildTest() {
                         if (depsFromTKGLib.size() > 0) {
                             def endIdx = depsFromTKGLib.size() - 1
                             for (idx in 0..endIdx) {
-                                sh "cp ./aqa-tests/TKG/lib"
+                                sh "cp ./aqa-tests/TKG/lib/${depsFromTKGLib[idx]} ${targetPath[idx]}"
                             }
                         }
 			try {
