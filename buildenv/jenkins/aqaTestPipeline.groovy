@@ -35,6 +35,10 @@ if (TEST_FLAG) {
     suffix = "_" + TEST_FLAG.toLowerCase().trim()
 }
 
+if (params.JDK_BRANCH.contains('dragonwell_standard') || params.JDK_BRANCH.contains('standard')) {
+    TEST_FLAG = 'Dragonwell_Standard'
+}
+
 def fail = false
 JDK_VERSIONS.each { JDK_VERSION ->
     PLATFORMS.each { PLATFORM ->
