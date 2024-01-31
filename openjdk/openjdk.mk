@@ -72,7 +72,7 @@ JTREG_BASIC_OPTIONS += -a
 JTREG_ASSERT_OPTION = -ea -esa
 JTREG_BASIC_OPTIONS += $(JTREG_ASSERT_OPTION)
 # Report details on all failed or error tests, times, and suppress output for tests that passed
-JTREG_BASIC_OPTIONS += -v:fail,error,time,nopass
+JTREG_BASIC_OPTIONS += -v:fail,error,time
 # Retain all files for failing tests
 JTREG_BASIC_OPTIONS += -retain:fail,error,*.dmp,javacore.*,heapdump.*,*.trc
 # Ignore tests are not run and completely silent about it
@@ -108,8 +108,8 @@ OPENJDK_DIR := $(TEST_ROOT)$(D)openjdk$(D)openjdk-jdk
 endif
 
 JDK_CUSTOM_TARGET ?= java/math/BigInteger/BigIntegerTest.java
-#HOTSPOT_CUSTOM_TARGET ?= gc/stress/gclocker/TestExcessGCLockerCollections.java
-HOTSPOT_CUSTOM_TARGET := hotspot_all_no_apps
+HOTSPOT_CUSTOM_TARGET ?= gc/stress/gclocker/TestExcessGCLockerCollections.java
+#HOTSPOT_CUSTOM_TARGET := :hotspot_all_no_apps
 LANGTOOLS_CUSTOM_TARGET ?= tools/javac/4241573/T4241573.java
 ifneq (,$(findstring $(JDK_VERSION),8-9))
 	JTREG_JDK_TEST_DIR := $(OPENJDK_DIR)$(D)jdk$(D)test

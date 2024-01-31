@@ -29,14 +29,22 @@
 	<if>
 		<or>
 			<matches pattern="^[89]{1}$" string="${JDK_VERSION}"/>
-			<matches pattern="^[1][0123456]" string="${JDK_VERSION}"/>
+			<matches pattern="^[1][023456]" string="${JDK_VERSION}"/>
 		</or>
 		<then>
-			<property name="jtregTar" value="jtreg_5_1_b01"/>
+                  <if>
+                    <equals arg1="${SPEC}" arg2="linux_riscv64" />
+                    <then>
+			<property name="jtregTar" value="jtreg_6_1"/>
+                    </then>
+                    <else>
+                        <property name="jtregTar" value="jtreg_5_1_b01"/>
+                    </else>
+                  </if>
 		</then>
 		<else>
 			<if> 
-				<equals arg1="${JDK_VERSION}" arg2="17" />
+				<matches pattern="^[1][17]" string="${JDK_VERSION}"/>
 				<then>
 					<property name="jtregTar" value="jtreg_6_1"/>
 				</then>
