@@ -94,8 +94,7 @@ node {
                 if (JobHelper.jobIsRunnable(TEST_JOB_NAME as String)) {
                     JOBS["${TEST_JOB_NAME}"] = {
                         def downstreamJob = build job: TEST_JOB_NAME, propagate: false, parameters: [
-                            //string(name: 'ADOPTOPENJDK_REPO', value: params.LATEST_TESTSUITE.equals(true) ? 'git@github.com:adoptium/aqa-tests.git' : params.ADOPTOPENJDK_REPO),
-                            string(name: 'ADOPTOPENJDK_REPO', value: params.LATEST_TESTSUITE.equals(true) ? 'https://github.com/adoptium/aqa-tests.git' : params.ADOPTOPENJDK_REPO),
+                            string(name: 'ADOPTOPENJDK_REPO', value: params.LATEST_TESTSUITE.equals(true) ? 'git@github.com:adoptium/aqa-tests.git' : params.ADOPTOPENJDK_REPO),
                             string(name: 'ADOPTOPENJDK_BRANCH', value: params.LATEST_TESTSUITE.equals(true) ? 'master' : params.ADOPTOPENJDK_BRANCH),
                             booleanParam(name: 'USE_TESTENV_PROPERTIES', value: USE_TESTENV_PROPERTIES),
                             string(name: 'SDK_RESOURCE', value: sdk_resource_value),
