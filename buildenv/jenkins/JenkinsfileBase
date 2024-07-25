@@ -218,6 +218,7 @@ def setupParallelEnv() {
 						env.LIB_DIR = env.SYSTEM_LIB_DIR
 					}
                                         copyArtifacts fingerprintArtifacts: true, projectName: "test.getDependency", selector: lastSuccessful(), target: env.LIB_DIR
+                                        sh "mkdir -p ${env.WORKSPACE}/jvmtest/perf/dacapo &&  cp ${env.LIB_DIR}/dacapo.jar ${env.WORKSPACE}/jvmtest/perf/dacapo/"
 					//sh "perl ./aqa-tests/TKG/scripts/getDependencies.pl -path ${env.LIB_DIR} -task default -customUrl ${customUrl}"
 				}
 			} catch (Exception e) {
