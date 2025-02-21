@@ -1,11 +1,33 @@
 # External (Third Party Container) Tests
 
-Third Party container tests help verify that the adoptium binaries are *good* by running a variety of Java applications inside of Docker containers. adoptium/aqa-tests/[Issue #172](https://github.com/adoptium/aqa-tests/issues/172) lists the applications that we have initially targeted to best exercise the adoptium binaries.  For each application, we choose to run a selection of their functional tests.
+Third Party container tests help verify that the adoptium binaries are *good* by running a variety of Java applications inside of containers. adoptium/aqa-tests/[Issue #172](https://github.com/adoptium/aqa-tests/issues/172) lists the applications that we have initially targeted to best exercise the adoptium binaries.  For each application, we choose to run a selection of their functional tests.
+
+## Podman, docker and others. Sudo, runas and others
+
+The toolchain understands two environment variables:
+```
+EXTERNAL_AQA_RUNNER=docker|podman|...
+```
+defaults to podman if podman is installed, otherwise to docker
+
+and
+```
+EXTERNAL_AQA_SUDO=sudo||runas 
+```
+which defaults to empty string
+```
+EXTERNAL_AQA_CONTAINER_CLEAN=true|false
+```
+If EXTERNAL_AQA_CONTAINER_CLEAN is false, then the image is not cleaned after the `make _tests...` targets are finished.
+
+## Configuring base image
+By default, Eclipse Temurin JDK of identical version as your JDK is used. You can see, that `print_image_args` is taking all arguments to properly set registry url, image name and version. `EXTERNAL_AQA_IMAGE` variable describes the usual image ID in form  of `optional_registry/path/name:tag` to allow for alternate images besides the default to be used. E.g.: `export EXTERNAL_AQA_IMAGE=fedora:41` or `export EXTERNAL_AQA_IMAGE=centos:stream9`
+
 
 ## Running External tests locally
 To run any AQA tests locally, you follow the same pattern:
 
-0. Ensure your test machine is set up with [test prereqs](https://github.com/adoptium/aqa-tests/blob/master/doc/Prerequisites.md).  For external tests, you do need Docker installed.
+0. Ensure your test machine is set up with [test prereqs](https://github.com/adoptium/aqa-tests/blob/master/doc/Prerequisites.md).  For external tests, you do need Docker or Podman installed.
 
 1. Download/unpack the SDK that you want to test to your test machine
 1. `export TEST_JDK_HOME=</pathToWhereYouInstalledSDK>`
@@ -20,15 +42,15 @@ To run any AQA tests locally, you follow the same pattern:
 
 When [running these from the command-line](https://github.com/adoptium/aqa-tests/blob/master/doc/userGuide.md#local-testing-via-make-targets-on-the-commandline), these tests are grouped under a make target called 'external', so 'make external' would run the entire set of tests found in the aqa-tests/external directory.  This is unadvisable!  Limit what you compile and run, BUILD_LIST=external/`<someSubDirectory>`, and TARGET=`<testCaseNameFromSubdirPlaylist>`
 
-These tests run regularly and results can be found in [TRSS Third Party Application view](https://trss.adoptopenjdk.net/ThirdPartyAppView).
+These tests run regularly and results can be found in [TRSS Third Party Application view](https://trss.adoptium.net/ThirdPartyAppView).
 
 See the [roadmap](https://github.com/adoptium/aqa-tests/tree/master/external#roadmap) for additional ways we plan to expand this approach.
 
 ### Roadmap
 Our next steps to improve and expand this set of external tests is divided into 2 categories:
 #### Technical Goals
-- Verify the docker images that the project produces
-- Copy results from Docker container for easier viewing and triage in Jenkins
+- Verify the container images that the project produces
+- Copy results from container for easier viewing and triage in Jenkins
 - Quick compare view, easy comparison of how different implementations stack up
 - Parallel testing (to improve execution time)
 - Startup-only testing (application startup, but not full runs of app functional testing)
@@ -61,7 +83,7 @@ There are 4 common triage scenarios, with associated appropriate actions to take
 - Replace the example command line at the bottom of this script with the initial command lines that trigger execution of your test.
 
 **build.xml**
-- Update the distribution folder paths, docker image name etc according to the name of your application.
+- Update the distribution folder paths, container image name etc according to the name of your application.
 
 **playlist.xml**
 - Update the name of the example test case to the actual test case of the third party application that you intend to run.

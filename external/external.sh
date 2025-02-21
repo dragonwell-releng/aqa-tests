@@ -16,6 +16,36 @@
 # script runs in 5 modes - prepare / build / run / load / clean
 
 set -e
+
+source $(dirname "$0")/provider.sh
+
+if [ -z "${EXTRA_DOCKER_ARGS}" ] ; then
+  echo \
+"   # ================= WARNING ================= WARNING ================= WARNING ================= #
+   # EXTRA_DOCKER_ARGS are not set. You will be testing java which is already in container and not TEST_JDK_HOME
+   # TEST_JDK_HOME is set to $TEST_JDK_HOME but will not be used. See test_base_functions.sh for order of search
+   # You should set your's TEST_JDK_HOME to mount to /opt/java/openjdk, eg:                          #
+   # export EXTRA_DOCKER_ARGS=\"-v \$TEST_JDK_HOME:/opt/java/openjdk\"                               #
+   # ================= WARNING ================= WARNING ================= WARNING ================= #"
+else
+  echo \
+"   # =================== Info =================== Info =================== Info =================== #
+   # EXTRA_DOCKER_ARGS set as \"$EXTRA_DOCKER_ARGS\"                                #
+   # =================== Info =================== Info =================== Info =================== #"
+  if echo "${EXTRA_DOCKER_ARGS}" | grep -q "$TEST_JDK_HOME"  ; then
+    echo \
+"   # =================== Info =================== Info =================== Info =================== #
+   # TEST_JDK_HOME of $TEST_JDK_HOME is used in EXTRA_DOCKER_ARGS                                #
+   # =================== Info =================== Info =================== Info =================== #"
+  else
+    echo \
+"   # ================= WARNING ================= WARNING ================= WARNING ================= #
+   # TEST_JDK_HOME of $TEST_JDK_HOME is NOT used in EXTRA_DOCKER_ARGS                                #
+   # ================= WARNING ================= WARNING ================= WARNING ================= #"
+  fi
+fi
+
+
 tag=nightly
 docker_os=ubuntu
 build_type=full
@@ -33,17 +63,17 @@ node_name=""
 node_labels=""
 node_label_micro_architecture=""
 node_label_current_os=""
-container_run="docker run"
-container_login="docker login"
-container_inspect="docker inspect"
-container_cp="docker cp"
-container_commit="docker commit"
-container_tag="docker tag"
-container_logout="docker logout"
-container_push="docker push"
-container_pull="docker pull"
-container_rm="docker rm"
-container_rmi="docker rmi"
+container_run="$(getExternalImageCommand) run"
+container_login="$(getExternalImageCommand) login"
+container_inspect="$(getExternalImageCommand) inspect"
+container_cp="$(getExternalImageCommand) cp"
+container_commit="$(getExternalImageCommand) commit"
+container_tag="$(getExternalImageCommand) tag"
+container_logout="$(getExternalImageCommand) logout"
+container_push="$(getExternalImageCommand) push"
+container_pull="$(getExternalImageCommand) pull"
+container_rm="$(getExternalImageCommand) rm"
+container_rmi="$(getExternalImageCommand) rmi"
 docker_registry_required="false"
 docker_registry_url=""
 docker_registry_dir=""
@@ -58,7 +88,7 @@ imageArg=""
 
 
 usage () {
-	echo 'Usage : external.sh  --dir TESTDIR --tag DOCKERIMAGE_TAG --version JDK_VERSION --impl JDK_IMPL [--docker_os docker_os][--platform PLATFORM] [--portable portable] [--node_name node_name] [--node_labels node_labels] [--docker_registry_required docker_registry_required] [--docker_registry_url DOCKER_REGISTRY_URL] [--docker_registry_dir DOCKER_REGISTRY_DIR] [--base_docker_registry_url baseDockerRegistryUrl] [--base_docker_registry_dir baseDockerRegistryDir] [--mount_jdk mount_jdk] [--test_root TEST_ROOT] [--reportsrc appReportDir] [--reportdst REPORTDIR] [--testtarget target] [--docker_args EXTRA_DOCKER_ARGS] [--build|--run|--load|--clean]'
+	echo 'Usage : external.sh  --dir TESTDIR --tag DOCKERIMAGE_TAG --version JDK_VERSION --impl JDK_IMPL [--docker_os docker_os][--platform PLATFORM] [--portable portable] [--node_name node_name] [--node_labels node_labels] [--docker_registry_required docker_registry_required] [--docker_registry_url DOCKER_REGISTRY_URL] [--docker_registry_dir DOCKER_REGISTRY_DIR] [--base_docker_registry_url baseDockerRegistryUrl] [--base_docker_registry_dir baseDockerRegistryDir] [--mount_jdk mount_jdk] [--test_root TEST_ROOT] [--reportsrc appReportDir] [--reportdst REPORTDIR] [--testtarget target] [--docker_args EXTRA_DOCKER_ARGS] [--build|--run|--load|--clean|--prune]'
 }
 
 supported_tests="external_custom aot camel criu-functional criu-portable-checkpoint  criu-portable-restore criu-ubi-portable-checkpoint criu-ubi-portable-restore derby elasticsearch jacoco jenkins functional-test kafka lucene-solr openliberty-mp-tck payara-mp-tck quarkus quarkus_quickstarts scala system-test tck-ubi-test tomcat tomee wildfly wycheproof netty spring"
@@ -98,7 +128,7 @@ parseCommandLineArgs() {
 					docker_os=ubi
 				fi
 
-				if [[ "${test}" == *"criu"* || "${test}" == *"tck"* ]]; then
+				if [[ "${test}" == *"criu"* || "${test}" == tck-* ]]; then
 					container_run="sudo podman run"
 					container_login="sudo podman login"
 					container_inspect="sudo podman inspect"
@@ -224,6 +254,9 @@ parseCommandLineArgs() {
 
 			"--clean" | "-c" )
 				command_type=clean;;
+
+			"--prune" | "-p" )
+				command_type=prune;;
 
 			"--help" | "-h" )
 				usage; exit 0;;
@@ -436,12 +469,21 @@ if [ $command_type == "load" ]; then
 	fi
 fi
 
-if [ $command_type == "clean" ]; then
+if [ "${command_type}" == "clean" ] ; then
 	if [[ ${test} == 'external_custom' ]]; then
 			test="$(echo ${EXTERNAL_CUSTOM_REPO} | awk -F'/' '{print $NF}' | sed 's/.git//g')"
+	fi
+	if [ "${EXTERNAL_AQA_CONTAINER_CLEAN}" == "false" ] ; then
+			echo "to debug, put '-i --entrypoint /bin/bash' before container name"
+			container_rm="echo to clean, run manually: $container_rm"
+			container_rmi="echo to clean, run manually: $container_rmi"
 	fi
 	$container_rm -f $test-test; $container_rmi -f adoptopenjdk-$test-test:${JDK_VERSION}-$package-$docker_os-${JDK_IMPL}-$build_type
 	$container_rm -f restore-test
 	$container_rmi -f ${docker_registry_url}/${docker_image_source_job_name}/${JDK_VERSION}-${JDK_IMPL}-${docker_os}-${platform}-${node_label_current_os}-${node_label_micro_architecture}:${build_number}
 	$container_rmi -f ${docker_registry_url}/${docker_image_source_job_name}:${build_number}
+fi
+
+if [ "${command_type}" == "prune" ] ; then
+	$(getExternalImageCommand) system prune --all --force
 fi
